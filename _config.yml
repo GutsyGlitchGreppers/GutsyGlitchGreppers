@@ -1,8 +1,8 @@
 # 1. Site Settings
-title               : pRoJEct-VeXEd
-owner               : "DeerRIDER"
-url                : "https://gmkzwwg.github.io"
-baseurl            : "/pRoJEct-VeXEd"
+title               : "Gutsy Glitch Greppers"
+owner               : "GGG"
+url                 : "https://ggg.ninja"
+baseurl             : "/"
 permalink           : /:title/
 description         : "A hacker-style note-keeping website template."
 markdown            : kramdown
