@@ -2,7 +2,7 @@
 title               : "Gutsy Glitch Greppers"
 owner               : "GGG"
 url                 : "https://ggg.ninja"
-baseurl             : "/"
+baseurl             : ""
 permalink           : /:title/
 description         : "A hacker-style note-keeping website template."
 markdown            : kramdown
