@@ -28,9 +28,6 @@ collections:
     permalink       : /:collection/:title/
     sort_by         : date
 
-# 3. Comment settings（disqus.com）
-disqus_username     : gmkzwwg
-
 # 4. Default page settings (WILL BE overwriten by front-matters of a page)
 defaults:
   -    
