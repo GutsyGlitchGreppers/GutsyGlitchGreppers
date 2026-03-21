@@ -54,16 +54,16 @@ defaults:
       footer              : true        # whether show footer by default
 
 # 5. Social Media Accounts
-email               : "https://github.com/gmkzwwg/pRoJEct-VeXEd" 
+email               : 
 linkedin            : 
-github              : "just-test" 
+github              : 
 gitlab              : 
-website             : "https://github.com/gmkzwwg/pRoJEct-VeXEd"
-twitter             : "just-test"
-facebook            : "just-test"
+website             : 
+twitter             : 
+facebook            : 
 instagram           : 
-youtube             : "just-test"
-steam               : "just-test"
+youtube             :
+steam               :
 weibo               :
       
 # 6. Where things are
