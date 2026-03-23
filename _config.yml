@@ -20,12 +20,12 @@ collection_order    :
 collections:
   ctf:   
     output          : true
-    permalink       : /:collection/:title/
+    permalink       : /:collection/:year/:month/:day/:title
     sort_by         : date
     alias           : "CTF"
   posts:
     output          : true
-    permalink       : /:collection/:title/
+    permalink       : /:collection/:year/:month/:day/:title
     sort_by         : date
 
 # 4. Default page settings (WILL BE overwriten by front-matters of a page)
