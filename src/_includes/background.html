@@ -5,20 +5,49 @@
 <script>
 var c = document.getElementById("c");
 var ctx = c.getContext("2d");
-c.height = window.innerHeight;
-c.width = window.innerWidth;
 var txts = "{{site.bgtext}}";
-txts = txts.split("");
+txts = Array.from(txts).filter(function (char) {
+  return char.trim() !== "";
+});
 var font_size = 12;
-var columns = c.width / font_size;
 var drops = [];
-for (var x = 0; x < columns; x++) drops[x] = 1;
+
+function ensureCanvasCoverage() {
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+  var nextWidth = Math.max(c.width, width);
+  var nextHeight = Math.max(c.height, height);
+  var nextColumns = Math.ceil(nextWidth / font_size);
+
+  if (nextWidth !== c.width || nextHeight !== c.height) {
+    var snapshot = document.createElement("canvas");
+    snapshot.width = c.width;
+    snapshot.height = c.height;
+    snapshot.getContext("2d").drawImage(c, 0, 0);
+
+    c.width = nextWidth;
+    c.height = nextHeight;
+    ctx.drawImage(snapshot, 0, 0);
+  }
+
+  if (drops.length < nextColumns) {
+    while (drops.length < nextColumns) {
+      drops.push(1);
+    }
+  } else if (!drops.length) {
+    drops = Array.from({ length: nextColumns }, function () {
+      return 1;
+    });
+  }
+}
 
 function draw() {
   ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
   ctx.fillRect(0, 0, c.width, c.height);
   ctx.fillStyle = "#490";
-  ctx.font = font_size + "px arial";
+  ctx.font =
+    font_size +
+    'px "Segoe UI Symbol", "Noto Sans Symbols 2", "Arial Unicode MS", sans-serif';
   for (var i = 0; i < drops.length; i++) {
     var text = txts[Math.floor(Math.random() * txts.length)];
     ctx.fillText(text, i * font_size, drops[i] * font_size);
@@ -26,5 +55,14 @@ function draw() {
     drops[i]++;
   }
 }
+
+ensureCanvasCoverage();
+
+var resizeTimer;
+window.addEventListener("resize", function () {
+  window.clearTimeout(resizeTimer);
+  resizeTimer = window.setTimeout(ensureCanvasCoverage, 100);
+});
+
 setInterval(draw, 20);
 </script>
