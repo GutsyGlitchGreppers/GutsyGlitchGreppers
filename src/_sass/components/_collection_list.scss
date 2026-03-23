@@ -34,6 +34,7 @@
     padding: 0;
     border-bottom: $secondary-border;
     .collection_list_header_title {
+      font-family: $font-header;
       height: auto;
       width: auto;
       display: inline-block;
@@ -147,6 +148,7 @@
   }
   // left part
   .a_collection_label {
+    font-family: $font-header;
     padding: 0;
     font-size: $font-size-h3;
     line-height: 160%;
@@ -163,6 +165,7 @@
   }
   // labels of "all" collections in right part
   .h_collection_label {
+    font-family: $font-header;
     margin: 0 0 0.5em 0;
     font-size: $font-size-h6;
     text-transform: capitalize;
