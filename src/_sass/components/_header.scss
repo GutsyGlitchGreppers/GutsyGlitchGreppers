@@ -4,7 +4,9 @@
   width: 100%;
   height: auto;
   z-index: 3;
-  border: $secondary-border;
+  background-color: rgba($color-postbg, 0.28);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   border-bottom: $medium-border;
   .vertical_center_table {
     width: 100%;
