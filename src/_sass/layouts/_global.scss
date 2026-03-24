@@ -18,7 +18,7 @@
   overflow: none;
   margin: 0 auto;
   box-sizing: border-box; // interior border
-  background-color: rgba($color-postbg, 0.72);
+  background-color: rgba($color-postbg, 0.86);
   border-left: $secondary-border;
   border-right: $secondary-border;
 }
@@ -70,7 +70,7 @@
     left: 0 !important;
     margin: 0;
     border: $thick-border;
-    background-color: rgba($color-postbg, 0.7);
+    background-color: rgba($color-postbg, 0.82);
   }
   .page .container .div_article {
     border: none;
