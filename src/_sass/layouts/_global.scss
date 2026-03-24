@@ -23,6 +23,10 @@
   border-right: $secondary-border;
 }
 
+.container.is-maximized {
+  border-left: none;
+  border-right: none;
+}
 .div_article {
   top: 0;
   height: 100vh;

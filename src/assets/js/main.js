@@ -39,17 +39,21 @@ function toggle_maximize() {
     if (ctner_state == 0) {
         ctner.style.top = "0";    
         ctner.style.width = "100%";
-        ctner.style.height = "100%";
+        ctner.style.height = "100vh";
+        ctner.style.minHeight = "100vh";
         ctner.style.maxWidth = "100%";
+        ctner.classList.add("is-maximized");
         if (document.getElementById("mxmz_text")) {
             document.getElementById("mxmz_text").innerHTML = "Restore";
         }
         ctner_state = 1;
     } else if (ctner_state == 1) {
-        ctner.style.top = "2%";    
+        ctner.style.top = "0";    
         ctner.style.width = "84%";
-        ctner.style.height = "97%";
+        ctner.style.height = "100vh";
+        ctner.style.minHeight = "100vh";
         ctner.style.maxWidth = "1350px";
+        ctner.classList.remove("is-maximized");
         if (document.getElementById("mxmz_text")) {
             document.getElementById("mxmz_text").innerHTML = "Maximize";
         }
@@ -91,5 +95,3 @@ function apply_token() {
         document.getElementById("acs_btn").style.display = "none";
     }
 }
-
-
