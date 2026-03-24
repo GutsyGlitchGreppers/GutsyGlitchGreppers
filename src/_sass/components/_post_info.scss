@@ -3,10 +3,11 @@
   padding: 0 50px;
   font-size: $font-smaller;
   margin: 0;
+  color: $color-muted;
 }
 .abstract {
   font-size: $font-smaller;
-  color: rgba($color-primary, 0.9);
+  color: $color-muted;
   padding: 1.1em 2.8em;
   p {
     border-bottom: $thin-border;

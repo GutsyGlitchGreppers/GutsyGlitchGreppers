@@ -2,12 +2,14 @@
 body {
   line-height: 1.75;
   font-size: $font-size-primary;
-  color: $color-primary;
+  color: $color-body;
   font-family: $font-sans-serif;
+  text-rendering: optimizeLegibility;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: $font-header;
+  color: $color-primary;
 }
 
 h1 {
@@ -45,9 +47,10 @@ h6 {
 p {
   margin: $global-section-margin 0px;
   display: block;
+  max-width: 78ch;
 }
 strong {
-  color: mix($color-primary, rgba(#ddd, 1));
+  color: mix($color-body, rgba(#ddd, 1));
   -webkit-text-stroke: 0.5px $color-primary;
   // text-shadow: 0.35px 0.35px 0 $color-primary;
 }
@@ -79,7 +82,7 @@ button {
 }
 // links
 a {
-  color: $color-primary;
+  color: mix($color-primary, $color-body, 78%);
   text-decoration: underline dotted rgba($color-primary, 0.4);
 }
 a:hover {
@@ -148,6 +151,7 @@ code {
   font-family: $font-monospace;
 }
 article {
+  color: $color-body;
   a {
     padding: 0 0.3em;
   }
