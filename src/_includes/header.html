@@ -114,6 +114,11 @@
 <script>
   var ctner_state = 0;
   var ctner = document.getElementById("ctner");
+  window.addEventListener("load", function () {
+    if (typeof initialize_maximize_state === "function") {
+      initialize_maximize_state();
+    }
+  });
 </script>
 {% endif %}
 <!-- encrypt and decrypt -->

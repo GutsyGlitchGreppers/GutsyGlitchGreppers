@@ -4,4 +4,10 @@ comment: true
 ---
 
 {{ content }}
-<script>toggle_maximize()</script>
+<script>
+  window.addEventListener("load", function () {
+    if (typeof set_maximize_state === "function") {
+      set_maximize_state(true);
+    }
+  });
+</script>

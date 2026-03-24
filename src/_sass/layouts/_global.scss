@@ -23,7 +23,10 @@
   border-right: $secondary-border;
 }
 
+html.persist-maximized .container,
 .container.is-maximized {
+  width: 100%;
+  max-width: 100%;
   border-left: none;
   border-right: none;
 }

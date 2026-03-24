@@ -34,31 +34,68 @@ function scroll_percentage(mtpler) {
         .scrollBy(0, window.innerHeight * mtpler);
 }
 
-// toggle entire page -> header.html -> #mxmz_btn
-function toggle_maximize() {
-    if (ctner_state == 0) {
-        ctner.style.top = "0";    
+var maximize_storage_key = "ggg:maximized";
+
+function read_maximize_preference() {
+    try {
+        return window.localStorage.getItem(maximize_storage_key) === "true";
+    } catch (e) {
+        return false;
+    }
+}
+
+function write_maximize_preference(is_maximized) {
+    try {
+        window.localStorage.setItem(maximize_storage_key, String(is_maximized));
+    } catch (e) {
+        return;
+    }
+}
+
+function sync_maximize_root_class(is_maximized) {
+    document.documentElement.classList.toggle("persist-maximized", is_maximized);
+}
+
+function set_maximize_state(is_maximized, persist_preference) {
+    if (typeof ctner === "undefined" || !ctner) {
+        return;
+    }
+
+    ctner.style.top = "0";
+    ctner.style.height = "100vh";
+    ctner.style.minHeight = "100vh";
+
+    if (is_maximized) {
         ctner.style.width = "100%";
-        ctner.style.height = "100vh";
-        ctner.style.minHeight = "100vh";
         ctner.style.maxWidth = "100%";
         ctner.classList.add("is-maximized");
-        if (document.getElementById("mxmz_text")) {
-            document.getElementById("mxmz_text").innerHTML = "Restore";
-        }
-        ctner_state = 1;
-    } else if (ctner_state == 1) {
-        ctner.style.top = "0";    
+    } else {
         ctner.style.width = "84%";
-        ctner.style.height = "100vh";
-        ctner.style.minHeight = "100vh";
         ctner.style.maxWidth = "1350px";
         ctner.classList.remove("is-maximized");
-        if (document.getElementById("mxmz_text")) {
-            document.getElementById("mxmz_text").innerHTML = "Maximize";
-        }
-        ctner_state = 0;
     }
+
+    if (document.getElementById("mxmz_text")) {
+        document.getElementById("mxmz_text").innerHTML = is_maximized
+            ? "Restore"
+            : "Maximize";
+    }
+
+    ctner_state = is_maximized ? 1 : 0;
+    sync_maximize_root_class(is_maximized);
+
+    if (persist_preference !== false) {
+        write_maximize_preference(is_maximized);
+    }
+}
+
+function initialize_maximize_state() {
+    set_maximize_state(read_maximize_preference(), false);
+}
+
+// toggle entire page -> header.html -> #mxmz_btn
+function toggle_maximize() {
+    set_maximize_state(ctner_state === 0);
 }
 
 // Decrypt secret message -> header.html -> #asc_btn

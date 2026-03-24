@@ -22,6 +22,15 @@
     escape }}
         {% endif %}
     </title>
+    <script>
+      (function () {
+        try {
+          if (window.localStorage.getItem("ggg:maximized") === "true") {
+            document.documentElement.classList.add("persist-maximized");
+          }
+        } catch (e) {}
+      })();
+    </script>
     <!-- icon -->
     <link href="{{site.url }}{{site.baseurl}}/src/assets/img/GGG.jpg" rel="icon" type="image/jpeg"/>
     <link href="{{site.url }}{{site.baseurl}}/src/assets/img/GGG.jpg" rel="shortcut icon" type="image/jpeg"/>
