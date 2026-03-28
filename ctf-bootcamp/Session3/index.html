@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Generated on 2026-03-28 Sat 13:30 -->
+<meta charset="utf-8"/>
+<title>Hacking Bootcamp S3: View source</title>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css"/>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/dracula.css" id="theme"/>
+
+<link rel="stylesheet" href="./local.css"/>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1>Hacking Bootcamp S3: View source</h1><h2></h2>
+</section>
+<section>
+<section id="slide-org608881a">
+<h2 id="org608881a">Today</h2>
+<div style="font-size: 90%">
+<ul>
+<li>Web apps</li>
+<li>HTTP
+<ul>
+<li>Format</li>
+<li>Status</li>
+<li>Headers</li>
+
+</ul></li>
+<li>HTML</li>
+<li>JS</li>
+<li>CSS</li>
+<li>Known files</li>
+<li>Hack time!</li>
+
+</ul>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-orgb47f3bf">
+<h2 id="orgb47f3bf">Tools</h2>
+<p>
+Install please:
+</p>
+<ul>
+<li>httpie</li>
+<li>httrack</li>
+<li>katana</li>
+<li>Burp Suite</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org5ca12ce">
+<h2 id="org5ca12ce">What&rsquo;s a web app</h2>
+<p>
+Applications delivered over the wire by some server (e.g., the Internet) and executed by a web
+browser (e.g., Chrome, Firefox).
+</p>
+
+<p>
+They are very popular nowadays and are used for much any you may want to do
+(e.g., calendar, mail, banking, music, video).
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org44d4ab4">
+<h2 id="org44d4ab4">Web app interaction</h2>
+<p>
+Web applications receive input from the user, such input is processed somehow
+(change the GUI, send data to the server).
+</p>
+
+<p>
+The client part of the web application (what runs on your browser and so on your
+computer) is on <b>your</b> control (altough most of the time it just does its thing).
+You can make your browser draw whatever on your screen and send anything back to
+the server.
+</p>
+
+<p>
+Of course, the server may not respond as you wish, some other party controls its code.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org73dd56b">
+<h2 id="org73dd56b">Talking to the server</h2>
+
+<div id="org92707ca" class="figure">
+<p><img src="img/http-requests.png" alt="http-requests.png" style="float:right; margin-left:20px; width:600px;" />
+</p>
+</div>
+
+<p>
+When the web application (on your browser) and the backend server (on some external server) communicate they use HTTP (Hypertext Transfer Protocol).
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orga21e797">
+<h3 id="orga21e797">URLs</h3>
+
+<div id="orga57fa03" class="figure">
+<p><img src="img/url-structure.png" alt="url-structure.png" />
+</p>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org8e13881">
+<h3 id="org8e13881">HTTP</h3>
+<ul>
+<li>Request-response protocol
+<ul>
+<li>A client makes a request, the server processes it and returns a response</li>
+
+</ul></li>
+<li>Stateless
+<ul>
+<li>Any state should be included in the requests (e.g., in the cookies, as extra form parameters, in the path or querystring of the URL).</li>
+
+</ul></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org1cbde4b">
+<h3 id="org1cbde4b">Message format</h3>
+<div class="outline-text-3" id="text-org1cbde4b">
+</div>
+</section>
+<section id="slide-org57da83e">
+<h4 id="org57da83e">Request</h4>
+<pre class="example">
+VERB /path HTTP/version
+Header: value
+Header: value
+
+(optional body)
+</pre>
+
+<p>
+Note: even if no body is present, a newline must follow the headers.
+</p>
+</section>
+<section id="slide-org22f743a">
+<h4 id="org22f743a">Response</h4>
+<pre class="example">
+HTTP/version status
+Header: value
+Header: value
+
+(optional body)
+</pre>
+</section>
+</section>
+<section>
+<section id="slide-orge9a2338">
+<h3 id="orge9a2338">Request methods (verbs)</h3>
+<p>
+Words that indicate the purpose of the request. They have each different
+semantics and the following list is their intended use case, nonetheless you
+could have an (ugly) web application using POSTs alone.
+</p>
+
+<ul>
+<li>GET: retrieve a resource</li>
+<li>POST: send data to a resource, may change state</li>
+<li>PUT: replaces a resource</li>
+<li>PATCH: modifies a resource</li>
+<li>DELETE: delete a resource</li>
+<li>OPTIONS: describe communication option for a resource</li>
+<li>HEAD: get GET response but without body (i.e., only the headers)</li>
+
+</ul>
+
+<p>
+We will mostly concern ourselves with GET and POST.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org29f0e7d">
+<h3 id="org29f0e7d">Status code</h3>
+<p>
+Returned by the server.
+</p>
+
+<p>
+Indicates what happened when processing the request.
+</p>
+</section>
+<section id="slide-org43899e7">
+<h4 id="org43899e7">Categories</h4>
+<ul>
+<li>1xx: Informational</li>
+<li>2xx: Success</li>
+<li>3xx: Redirection</li>
+<li>4xx: Client errors</li>
+<li>5xx: Server errors</li>
+
+</ul>
+
+</section>
+<section>
+</section>
+<section id="slide-orgf0e171d">
+<h4 id="orgf0e171d">Common status</h4>
+<ul>
+<li>200 OK: Request succeeded</li>
+<li>302, 303, 307, 308: Redirect to another page</li>
+<li>400 Bad Request: Content of the request was wrong</li>
+<li>404 Not Found: Resource does not exist</li>
+<li>500 Internal Server Error: Unexpected crash from the server</li>
+
+</ul>
+</section>
+<section id="slide-org50f06c4">
+<h4 id="org50f06c4">Note</h4>
+<p>
+It&rsquo;s up to the server to pick a status to return. It could have went all wrong and return 200 OK still.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org1b434aa">
+<h3 id="org1b434aa">Headers</h3>
+<p>
+Metadata about the request and responses.
+</p>
+
+<p>
+Many are standardized but you can include whatever header you want, it&rsquo;s up to
+the server to do something with it.
+</p>
+</section>
+<section id="slide-org5c4b735">
+<h4 id="org5c4b735">Host (request)</h4>
+<p>
+The domain the client wants to access
+</p>
+
+<pre class="example">
+Host: example.com
+</pre>
+</section>
+<section id="slide-orgcd8c418">
+<h4 id="orgcd8c418">User-Agent (request)</h4>
+<p>
+Identification for the client app that&rsquo;s doing the request (e.g., browser, curl, python)
+</p>
+
+<pre class="example">
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+</pre>
+</section>
+<section id="slide-orgde49439">
+<h4 id="orgde49439">Set-Cookie (response)</h4>
+<p>
+Indicates a cookie that the client should associate with the server.
+</p>
+
+<pre class="example">
+Set-Cookie: session=abc123; Path=/; HttpOnly; Secure
+</pre>
+</section>
+<section id="slide-orgfc5f007">
+<h4 id="orgfc5f007">Cookie (request)</h4>
+<p>
+Cookies stored by the client.
+</p>
+
+<pre class="example">
+Cookie: session=abc123
+</pre>
+</section>
+<section id="slide-org5efa27a">
+<h4 id="org5efa27a">Authorization (request)</h4>
+<p>
+Authentication credentials for the server.
+</p>
+
+<pre class="example">
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI...
+</pre>
+</section>
+<section id="slide-org4cd8441">
+<h4 id="org4cd8441">Content-Type (request and response)</h4>
+<p>
+Indicates the content type of the message body.
+</p>
+
+<pre class="example">
+Content-Type: application/x-www-form-urlencoded
+</pre>
+</section>
+<section id="slide-orgc659584">
+<h4 id="orgc659584">Location (response)</h4>
+<p>
+In server redirect responses, indicates the location to go to.
+</p>
+
+<pre class="example">
+Location: https://example.com/login
+</pre>
+</section>
+</section>
+<section>
+<section id="slide-orge486a5e">
+<h3 id="orge486a5e">Initial request</h3>
+<p>
+First you ask for a page.
+</p>
+
+<pre class="example">
+GET / HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: www.wikipedia.org
+User-Agent: HTTPie/3.2.4
+
+</pre>
+
+</section>
+<section>
+
+<p>
+And you get it back.
+</p>
+
+<pre class="example">
+HTTP/1.1 200 OK
+accept-ranges: bytes
+age: 35491
+cache-control: s-maxage=86400, must-revalidate, max-age=3600
+content-encoding: gzip
+content-length: 26368
+content-type: text/html
+date: Sat, 22 Nov 2025 10:25:11 GMT
+etag: W/"1bb6c-6426794fdf540"
+last-modified: Thu, 30 Oct 2025 22:15:09 GMT
+[snip…]
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en" class="no-js"&gt;
+&lt;head&gt;
+&lt;meta charset="utf-8"&gt;
+&lt;title&gt;Wikipedia&lt;/title&gt;
+&lt;meta name="description" content="Wikipedia is a free online encyclopedia, created
+and edited by volunteers around the world and hosted by the Wikimedia Foundation."&gt;
+[snip…]
+</pre>
+
+<p>
+The browser (probably) knows how to render the result data.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgd8106a2">
+<h3 id="orgd8106a2">Further requests</h3>
+<p>
+All interactions with the server are further done with HTTP requests.
+</p>
+
+<p>
+Logging in to a site:
+</p>
+
+<pre class="example">
+POST /login HTTP/1.1
+Host: example.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 33
+
+username=admin&amp;password=secret123
+</pre>
+
+<p>
+We get a response:
+</p>
+
+<pre class="example">
+HTTP/1.1 200 OK
+Content-Type: application/json
+Set-Cookie: session_id=ab34ff1290d...; Path=/; HttpOnly; Secure
+</pre>
+
+</section>
+<section>
+
+<p>
+The cookie is used in further requests to let the server know we have authenticated.
+</p>
+
+<pre class="example">
+GET /account/profile HTTP/1.1
+Host: example.com
+Cookie: session_id=ab34ff1290da88f112233
+</pre>
+
+<pre class="example">
+HTTP/1.1 200 OK
+Content-Type: text/plain; charset=utf-8
+
+Hello, user admin
+</pre>
+</section>
+</section>
+<section>
+<section id="slide-orgb14c5b6">
+<h2 id="orgb14c5b6">What&rsquo;s on your browser</h2>
+<p>
+Your web browser supports many file formats. The main ones are HTML, CSS and JavaScript.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org730e673">
+<h3 id="org730e673">HTML</h3>
+
+<div id="orgaae96e7" class="figure">
+<p><img src="img/html-tree.png" alt="html-tree.png" style="float:right; margin-left:20px; width:600px;" />
+</p>
+</div>
+
+<p>
+It specifies the structure of the page (text, images, buttons, input fields, etc) and the behaviours of some elements (e.g., buttons send some data to servers).
+</p>
+
+</section>
+<section>
+
+
+<div id="org0378787" class="figure">
+<p><img src="img/html-tag-breakdown.png" alt="html-tag-breakdown.png" />
+</p>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org885b314">
+<h3 id="org885b314">CSS</h3>
+<p>
+Controls the styling (e.g., color, layout, fonts) of the elements in the HTML.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org8100d31">
+<h3 id="org8100d31">JavaScript</h3>
+<p>
+Program code that runs on your browser and interacts with the HTML (e.g., receive events from the user, change the page structure) and can send data over to the server and receive the results.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org5e0e937">
+<h3 id="org5e0e937"></h3>
+<p>
+HTML = structure
+</p>
+
+<p>
+CSS = presentation
+</p>
+
+<p>
+JavaScript = behaviour
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org0d06171">
+<h3 id="org0d06171">Browser utilities</h3>
+<p>
+The browser has some utilities to inspect web pages.
+</p>
+
+<ul>
+<li>Right-click, view page source: View received HTML from server</li>
+<li>Developer console
+<ul>
+<li>Inspector: View live view of the site, probably mutated by JS</li>
+<li>Console: Evaluate JS on current context</li>
+<li>Network: See HTTP requests done by the site</li>
+<li>Storage: See data stored by the browser about the site</li>
+
+</ul></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org5066f68">
+<h2 id="org5066f68">The remote component</h2>
+<p>
+While your browser handles the frontend, the server handles the backend, the logic you don&rsquo;t see.
+</p>
+
+<p>
+This part may be written in any language that the server computer can execute (common choices are PHP, Python, and server side JavaScript itself).
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgfc54108">
+<h3 id="orgfc54108">Where is the data?</h3>
+<p>
+The remote server has to store the users data (e.g., mails, passwords, posts,
+messages) somewhere. It usually uses a SQL implementation.
+</p>
+
+<p>
+The web server may do something like this to retrieve the users.
+</p>
+<pre class="example">
+SELECT * FROM users
+WHERE username = 'alice'
+  AND password = 'password123';
+</pre>
+
+<p>
+Similar queries would be used to create a new user, change a user&rsquo;s password,
+create a new post, and so.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orga2e4f94">
+<h2 id="orga2e4f94">Known files</h2>
+<p>
+There are some common files usually exposed by web servers.
+</p>
+
+<p>
+We can use them to enumerate the service.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgaff461b">
+<h3 id="orgaff461b"><code>robots.txt</code></h3>
+<p>
+Tells bots which paths they are allowed/disallowed to visit.
+</p>
+
+<p>
+Of course, the bots are able to ignore it.
+</p>
+</section>
+<section id="slide-org393edb1">
+<h4 id="org393edb1">Example</h4>
+<pre class="example">
+User-agent: *
+Disallow: /admin
+Disallow: /backup
+Disallow: /internal-api
+Disallow: /secret-panel
+</pre>
+</section>
+</section>
+<section>
+<section id="slide-orgb84e813">
+<h3 id="orgb84e813"><code>sitemap.xml</code></h3>
+<p>
+List URLs on the site to make indexing easier.
+</p>
+</section>
+<section id="slide-org870f437">
+<h4 id="org870f437">Example</h4>
+<pre class="example">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;urlset&gt;
+  &lt;url&gt;
+    &lt;loc&gt;https://example.com/&lt;/loc&gt;
+  &lt;/url&gt;
+  &lt;url&gt;
+    &lt;loc&gt;https://example.com/login&lt;/loc&gt;
+  &lt;/url&gt;
+  &lt;url&gt;
+    &lt;loc&gt;https://example.com/admin&lt;/loc&gt;
+  &lt;/url&gt;
+  &lt;url&gt;
+    &lt;loc&gt;https://example.com/api/v1/users&lt;/loc&gt;
+  &lt;/url&gt;
+  &lt;url&gt;
+    &lt;loc&gt;https://example.com/dev-dashboard&lt;/loc&gt;
+  &lt;/url&gt;
+&lt;/urlset&gt;
+</pre>
+</section>
+</section>
+<section>
+<section id="slide-org672fb0f">
+<h2 id="org672fb0f">Commands</h2>
+<div class="outline-text-2" id="text-org672fb0f">
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org528345f">
+<h3 id="org528345f">curl</h3>
+<p>
+Don&rsquo;t. Prefer httpie, it&rsquo;s friendlier.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org910b6a3">
+<h3 id="org910b6a3">http(pie)</h3>
+<p>
+Make HTTP(S) requests.
+</p>
+
+<pre class="example">
+http [METHOD] URL [Header:value] [url_parameter==value] [form_attr=value]
+</pre>
+
+</section>
+<section>
+
+<p>
+HTTPie does POST JSON requests when given data, -f specifies
+<code>application/x-www-form-urlencoded</code>.
+</p>
+
+<pre class="example">
+http -f URL [form_attr=value]
+</pre>
+
+</section>
+<section>
+
+<p>
+You can show the sent request by using <code>-v</code>.
+</p>
+
+<pre class="example">
+http -v URL
+</pre>
+
+<p>
+Much recommended.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgcbdda5d">
+<h3 id="orgcbdda5d">katana</h3>
+<p>
+Crawls a page and returns the found URLs.
+</p>
+
+<pre class="example">
+katana -u URL
+</pre>
+
+</section>
+<section>
+
+<p>
+Recommended to use some flags to juice it up.
+</p>
+
+<pre class="example">
+katana -td -jc -d 10 -pc -kf all -u URL
+</pre>
+
+<p>
+Check the <code>--help</code> for explanations.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgec21d8a">
+<h3 id="orgec21d8a">httrack</h3>
+<p>
+Create a mirror of a a website to the disk.
+</p>
+
+<pre class="example">
+httrack URL
+</pre>
+
+<p>
+May be useful if you want to browse a website components offline. (Maybe grep?
+👀)
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgc7901da">
+<h3 id="orgc7901da">Burp Suite</h3>
+<p>
+Soon™
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orged6c360">
+<h2 id="orged6c360">Exercises</h2>
+<ul>
+<li>Inspect HTML
+<a href="https://play.picoctf.org/practice/challenge/275">https://play.picoctf.org/practice/challenge/275</a></li>
+
+<li>where are the robots
+<a href="https://play.picoctf.org/practice/challenge/4">https://play.picoctf.org/practice/challenge/4</a></li>
+
+<li>head-dump
+<a href="https://play.picoctf.org/practice/challenge/476">https://play.picoctf.org/practice/challenge/476</a></li>
+
+<li>Includes
+<a href="https://play.picoctf.org/practice/challenge/274">https://play.picoctf.org/practice/challenge/274</a></li>
+
+<li>Local Authority
+<a href="https://play.picoctf.org/practice/challenge/278">https://play.picoctf.org/practice/challenge/278</a></li>
+
+<li>GET aHEAD
+<a href="https://play.picoctf.org/practice/challenge/132">https://play.picoctf.org/practice/challenge/132</a></li>
+
+<li>Cookie Monster Secret Recipe
+<a href="https://play.picoctf.org/practice/challenge/469">https://play.picoctf.org/practice/challenge/469</a></li>
+
+<li>Bookmarklet
+<a href="https://play.picoctf.org/practice/challenge/406">https://play.picoctf.org/practice/challenge/406</a></li>
+
+<li>Crack the Gate 1
+<a href="https://play.picoctf.org/practice/challenge/520">https://play.picoctf.org/practice/challenge/520</a></li>
+
+<li>picobrowser
+<a href="https://play.picoctf.org/practice/challenge/9">https://play.picoctf.org/practice/challenge/9</a></li>
+
+<li>Insp3ct0r
+<a href="https://play.picoctf.org/practice/challenge/18">https://play.picoctf.org/practice/challenge/18</a></li>
+
+<li>dont-use-client-side
+<a href="https://play.picoctf.org/practice/challenge/66">https://play.picoctf.org/practice/challenge/66</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org9aa6ab0">
+<h2 id="org9aa6ab0">Exercises (cont)</h2>
+<ul>
+<li>login
+<a href="https://play.picoctf.org/practice/challenge/200">https://play.picoctf.org/practice/challenge/200</a></li>
+
+<li>logon
+<a href="https://play.picoctf.org/practice/challenge/46">https://play.picoctf.org/practice/challenge/46</a></li>
+
+<li>MatchTheRegex
+<a href="https://play.picoctf.org/practice/challenge/356">https://play.picoctf.org/practice/challenge/356</a></li>
+
+<li>Power Cookie
+<a href="https://play.picoctf.org/practice/challenge/288">https://play.picoctf.org/practice/challenge/288</a></li>
+
+<li>Roboto Sans
+<a href="https://play.picoctf.org/practice/challenge/291">https://play.picoctf.org/practice/challenge/291</a></li>
+
+<li>findme
+<a href="https://play.picoctf.org/practice/challenge/349">https://play.picoctf.org/practice/challenge/349</a></li>
+
+<li>Secrets
+<a href="https://play.picoctf.org/practice/challenge/296">https://play.picoctf.org/practice/challenge/296</a></li>
+
+<li>Cookies
+<a href="https://play.picoctf.org/practice/challenge/173">https://play.picoctf.org/practice/challenge/173</a></li>
+
+<li>Search source
+<a href="https://play.picoctf.org/practice/challenge/295">https://play.picoctf.org/practice/challenge/295</a></li>
+
+<li>Scavenger Hunt
+<a href="https://play.picoctf.org/practice/challenge/161">https://play.picoctf.org/practice/challenge/161</a></li>
+
+<li>Client-side-again
+<a href="https://play.picoctf.org/practice/challenge/69">https://play.picoctf.org/practice/challenge/69</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org67bffe4">
+<h2 id="org67bffe4">Further learning</h2>
+<ul>
+<li>pwn.college — Learn to Hack!
+<a href="https://pwn.college/">https://pwn.college/</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org819f84a">
+<h2 id="org819f84a">References</h2>
+<ul>
+<li><a href="https://developer.mozilla.org/">https://developer.mozilla.org/</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-orgba438e1">
+<h2 id="orgba438e1">Hack time!</h2>
+<ul>
+<li><a href="https://play.picoctf.org/practice">https://play.picoctf.org/practice</a></li>
+
+</ul>
+</section>
+</section>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/search/search.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/zoom/zoom.js"></script>
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: false,
+center: true,
+slideNumber: 'c',
+rollingLinks: false,
+keyboard: true,
+mouseWheel: false,
+fragmentInURL: false,
+hashOneBasedIndex: false,
+pdfSeparateFragments: true,
+overview: true,
+
+transition: 'slide',
+transitionSpeed: 'default',
+
+// Plugins with reveal.js 4.x
+plugins: [ RevealMarkdown, RevealNotes, RevealSearch, RevealZoom ],
+
+// Optional libraries used to extend reveal.js
+dependencies: [
+]
+
+});
+</script>
+</body>
+</html>

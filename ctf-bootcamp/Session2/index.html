@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Generated on 2026-03-28 Sat 13:30 -->
+<meta charset="utf-8"/>
+<title>Hacking Bootcamp S2: A series of tubes</title>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css"/>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/dracula.css" id="theme"/>
+
+<link rel="stylesheet" href="./local.css"/>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1>Hacking Bootcamp S2: A series of tubes</h1><h2></h2>
+</section>
+<section>
+<section id="slide-org634211a">
+<h2 id="org634211a">Today</h2>
+<div style="font-size: 90%">
+<ul>
+<li>OSI model</li>
+<li>TCP/IP model</li>
+<li>Network protocols
+<ul>
+<li>IP</li>
+<li>TCP</li>
+<li>UDP</li>
+<li>FTP</li>
+<li>HTTP</li>
+
+</ul></li>
+<li>Hack time!</li>
+
+</ul>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-orgf5be5c1">
+<h2 id="orgf5be5c1">Tools</h2>
+<p>
+Install please:
+</p>
+<ul>
+<li>Wireshark</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org5947f6c">
+<h2 id="org5947f6c">Networking</h2>
+<p>
+So, we need to send packets through the wire.
+</p>
+
+<p>
+We use <i>protocols</i> for that.
+</p>
+
+<p>
+We must define protocol mechanisms and message format.
+</p>
+
+<p>
+Each protocol will provide different functions.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org4d7ded9">
+<h2 id="org4d7ded9">OSI model</h2>
+<p>
+Reference model for communication system components.
+</p>
+
+
+<div id="orga6de0ee" class="figure">
+<p><img src="img/osi-model-table.png" alt="osi-model-table.png" />
+</p>
+</div>
+
+</section>
+<section>
+
+<p>
+Is not actually implemented, that is, it&rsquo;s a conceptual separation of networking responsibilities for protocols.
+</p>
+
+<p>
+Mostly used for talking about networks between informaticians.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org336920e">
+<h2 id="org336920e">Internet protocol suite (aka TCP/IP)</h2>
+<p>
+Set of protocols used in the Internet (and LANs and so)
+</p>
+
+
+<div id="orge13f93b" class="figure">
+<p><img src="img/tcp_ip-layers.png" alt="tcp_ip-layers.png" />
+</p>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org9b234fb">
+<h3 id="org9b234fb">Encapsulation</h3>
+
+<div id="orga54e6a4" class="figure">
+<p><img src="img/tcp_ip-encapsulation.png" alt="tcp_ip-encapsulation.png" style="float:right; margin-left:20px; width:500px;" />
+</p>
+</div>
+
+<p>
+The message of each protocol is <i>encapsulated</i>, that is used as the payload of a
+lower protocol level.
+</p>
+
+<p>
+The header and footer of the encapsulating protocol are concatenated to the
+bytes of the higher protocol.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orga2de277">
+<h2 id="orga2de277">Communication protocols</h2>
+<p>
+Define rules for two systems to transmit information between them.
+</p>
+
+<p>
+Consists of syntax and semantics (like programming language).
+</p>
+
+<p>
+The syntax defines the composition of the bytes that will be sent.
+</p>
+
+<p>
+The semantics define what the bytes represent.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgc9eca23">
+<h2 id="orgc9eca23">Ethernet</h2>
+<div class="outline-text-2" id="text-orgc9eca23">
+</div>
+</section>
+</section>
+<section>
+<section id="slide-orgcad4d09">
+<h3 id="orgcad4d09">MAC address</h3>
+<p>
+48-bit identifier assigned to network interface controllers (NIC)—devices in computers that
+connect to a network—to use as an address in network communications.
+</p>
+
+<p>
+They differentiate devices from one another in the same network.
+</p>
+</section>
+<section id="slide-orgb6f9bbc">
+<h4 id="orgb6f9bbc">Representation</h4>
+<p>
+Three common representations:
+</p>
+
+<p>
+Six groups of two hexadecimal digits, separated by hyphens (-) in transmission order
+</p>
+
+<p>
+<code>01-23-45-67-89-AB</code>
+</p>
+
+<p>
+Six groups of two hexadecimal digits separated by colons (:)
+</p>
+
+<p>
+<code>01:23:45:67:89:AB</code>
+</p>
+
+<p>
+Three groups of four hexadecimal digits separated by dots (.)
+</p>
+
+<p>
+<code>0123.4567.89AB</code>
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgd074b76">
+<h3 id="orgd074b76">Frame</h3>
+
+<div id="org22e95f9" class="figure">
+<p><img src="img/ethernet_frame.png" alt="ethernet_frame.png" />
+</p>
+</div>
+
+<p>
+Preamble and SFD are used for synchronization.
+</p>
+
+<p>
+MAC destination indicates the MAC of the destination device.
+</p>
+
+<p>
+MAC source indicates the MAC of the source device.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgaffac5e">
+<h3 id="orgaffac5e">Ethernet switching</h3>
+
+<div id="orgeafed69" class="figure">
+<p><img src="img/ethernet_switch.png" alt="ethernet_switch.png" style="float:right; margin-left:20px; width:500px;" />
+</p>
+</div>
+
+<p>
+Computers create the Ethernet frame, send it through their NIC, and off they go.
+</p>
+
+<p>
+It&rsquo;s responsability of the network infrastructure to make the frame reach its destination.
+</p>
+
+<p>
+Usually, the frame are forwarded to switches until the target is reached.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgf93b449">
+<h2 id="orgf93b449">IPv4</h2>
+<div class="outline-text-2" id="text-orgf93b449">
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org9141f23">
+<h3 id="org9141f23">IPv4 address</h3>
+<p>
+IPv4 uses 32-bit addresses; <code>4_294_967_296</code> possible addresses, though some are
+reserved for other purposes.
+</p>
+
+<p>
+Most often written as four octets of the address expressed individually in decimal numbers separated by periods. 
+</p>
+
+
+<div id="org8d66027" class="figure">
+<p><img src="img/ipv4-address.png" alt="ipv4-address.png" />
+</p>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-orgdb7aa50">
+<h3 id="orgdb7aa50">IPv4 packet</h3>
+<p>
+Consists of a header concatenated with the payload.
+</p>
+
+
+<div id="orgd7d3761" class="figure">
+<p><img src="img/ipv4-packet.png" alt="ipv4-packet.png" />
+</p>
+</div>
+
+<p>
+Source address: the IPv4 address of the sending device
+</p>
+
+<p>
+Destination address: the IPv4 address of the destination device
+</p>
+
+<p>
+Protocol: identifies the protocol of the contained payload
+</p>
+
+<p>
+Time to Live (TTL): used to limit a datagram&rsquo;s lifetime
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org8c3315f">
+<h3 id="org8c3315f">Routing</h3>
+
+<div id="org5208039" class="figure">
+<p><img src="img/ip-routing.png" alt="ip-routing.png" style="float:right; margin-left:20px; width:500px;" />
+</p>
+</div>
+
+<p>
+Each packet goes through routers that forward the packet to a router that should be closer to the intended destination device (<code>Destination address</code>).
+</p>
+
+<p>
+Each time a router receives a packet, it decrements the TTL by one, if it reaches zero it discards it instead of forwarding it.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org4a19924">
+<h2 id="org4a19924">Why Ethernet and IPv4?</h2>
+<p>
+Ethernet handles the local routing, between immediately physically connected devices.
+</p>
+
+<p>
+IPv4 (and IPv6) handles routing through multiple networks.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org0b63e2e">
+<h2 id="org0b63e2e">UDP</h2>
+<p>
+Very simple protocol, encapsulates application layer messages with a small header.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org61f0643">
+<h3 id="org61f0643">Ports</h3>
+<p>
+Within an operating system, a port identifies a specific application or service on a device.
+</p>
+
+<p>
+As such, many ports may be in use by multiple applications or even one alone.
+</p>
+</section>
+<section id="slide-org4d5ff19">
+<h4 id="org4d5ff19">Port number</h4>
+<p>
+A port is identified by a 16-bit integer, usually written a 16-bit integer.
+</p>
+
+<p>
+e.g., <code>22</code>, <code>80</code>
+</p>
+</section>
+<section id="slide-orgf834a5d">
+<h4 id="orgf834a5d">Well-known and registered ports</h4>
+<p>
+Several port numbers are associated with specific network services.
+</p>
+
+<p>
+Applications interacting with those services default to using the known port number.
+</p>
+
+<p>
+Nonetheless, they are a suggestion only, any network service can run through any
+of the valid 65536 port numbers.
+</p>
+
+</section>
+<section>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">Port</th>
+<th scope="col" class="org-left">TCP</th>
+<th scope="col" class="org-left">UDP</th>
+<th scope="col" class="org-left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">21</td>
+<td class="org-left">Yes</td>
+<td class="org-left">&nbsp;</td>
+<td class="org-left">FTP control</td>
+</tr>
+
+<tr>
+<td class="org-right">22</td>
+<td class="org-left">Yes</td>
+<td class="org-left">&nbsp;</td>
+<td class="org-left">SSH</td>
+</tr>
+
+<tr>
+<td class="org-right">53</td>
+<td class="org-left">Yes</td>
+<td class="org-left">Yes</td>
+<td class="org-left">DNS</td>
+</tr>
+
+<tr>
+<td class="org-right">80</td>
+<td class="org-left">Yes</td>
+<td class="org-left">Yes</td>
+<td class="org-left">HTTP</td>
+</tr>
+
+<tr>
+<td class="org-right">443</td>
+<td class="org-left">Yes</td>
+<td class="org-left">Yes</td>
+<td class="org-left">HTTP over TLS</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section>
+<section id="slide-org71a0b7c">
+<h3 id="org71a0b7c">UDP datagram</h3>
+
+<div id="orge58106e" class="figure">
+<p><img src="img/udp-datagram.png" alt="udp-datagram.png" />
+</p>
+</div>
+
+<p>
+Source port: identifies the sender&rsquo;s port
+</p>
+
+<p>
+Destination port: identifies the receiver&rsquo;s port
+</p>
+
+<p>
+Length: length in bytes of the UDP datagram (header + payload)
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orga966248">
+<h2 id="orga966248">TCP</h2>
+<p>
+As with UDP, it encapsulates application layer messages.
+</p>
+
+<p>
+But it provides many more features and as such is quite more complicated.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org3679e2a">
+<h3 id="org3679e2a">TCP datagram</h3>
+
+<div id="orgd098a27" class="figure">
+<p><img src="img/tcp-segment.png" alt="tcp-segment.png" /> 
+</p>
+</div>
+
+</section>
+<section>
+
+<p>
+Source port: identifies sending port
+</p>
+
+<p>
+Destination port: identifies receiving port
+</p>
+
+<p>
+Sequence number: used to identify the order of the data
+</p>
+
+<p>
+Acknowledgment number: used to indicate receipt of data
+</p>
+
+<p>
+ACK: Indicates acknowledgment
+</p>
+
+<p>
+SYN: Indicates initial sequence number
+</p>
+
+<p>
+FIN: Indicates it&rsquo;s the last packet from the sender
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org00a2b17">
+<h3 id="org00a2b17">Handshake</h3>
+<p>
+Establishes the sequence numbers to use in the transmission.
+</p>
+
+
+<div id="orgeedd507" class="figure">
+<p><img src="img/tcp-handshake.png" alt="tcp-handshake.png" />
+</p>
+</div>
+
+</section>
+<section>
+
+<p>
+This is why TCP is called connection-oriented. All data transmission in this TCP
+connection will continue from the sequence numbers decided in this step.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orga0692fd">
+<h3 id="orga0692fd">Data transmission</h3>
+
+<div id="org777bdac" class="figure">
+<p><img src="img/tcp-data_transfer.png" alt="tcp-data_transfer.png" height="500vh" />
+</p>
+</div>
+
+</section>
+<section>
+
+<p>
+Each packet sent is answered back with a packet ACKnowledging that the data was received.
+</p>
+
+<p>
+ACK number = sequence number of received segment + length of received data (SYN and FIN each consume one sequence number)
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org4e89228">
+<h3 id="org4e89228">Connection termination</h3>
+
+<div id="org30cc050" class="figure">
+<p><img src="img/tcp-fin.png" alt="tcp-fin.png" height="550vh" />
+</p>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org46d4b92">
+<h2 id="org46d4b92">TCP vs UDP</h2>
+<p>
+TCP handles a connection of bytes transferred between sender and receiver. UDP sends messages.
+</p>
+
+<p>
+TCP has error-correction, flow control, delivery guarantees, etc. UDP has no such things.
+</p>
+
+<p>
+As such, an application talking through UDP must implement such features if needed necessary (e.g., QUIC over UDP).
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org7065e86">
+<h2 id="org7065e86">HTTP</h2>
+<p>
+Further explained in next session.
+</p>
+
+<p>
+Consists of a request answered by a response from the server.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orga363cc4">
+<h3 id="orga363cc4">Request</h3>
+<pre class="example">
+METHOD /path HTTP/version
+Header-Name: value
+Header-Name: value
+
+[optional body]
+</pre>
+
+<pre class="example">
+GET / HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: github.com
+User-Agent: HTTPie/3.2.4
+
+</pre>
+</section>
+</section>
+<section>
+<section id="slide-org597cff2">
+<h3 id="org597cff2">Response</h3>
+<pre class="example">
+HTTP/version status_code status_text
+Header-Name: value
+Header-Name: value
+
+[optional body]
+</pre>
+
+<pre class="example">
+HTTP/1.1 301 Moved Permanently
+Content-Length: 0
+Location: https://github.com/
+
+</pre>
+</section>
+</section>
+<section>
+<section id="slide-org0032091">
+<h2 id="org0032091">Commands</h2>
+<div class="outline-text-2" id="text-org0032091">
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org92dd806">
+<h3 id="org92dd806">wireshark</h3>
+<p>
+Interactively dump and analyze network traffic
+</p>
+
+<p>
+<code>wireshark PCAP</code>
+</p>
+</section>
+<section id="slide-org51edb2d">
+<h4 id="org51edb2d">Find</h4>
+<p>
+CTRL-f
+</p>
+
+<p>
+Write string or bytes.
+</p>
+</section>
+<section id="slide-orgccca425">
+<h4 id="orgccca425">Filters</h4>
+<p>
+Write something on <code>Apply a display filter</code>.
+</p>
+
+<p>
+You can select a field from the dissection window to filter on that value.
+</p>
+
+
+<div id="orgeab014e" class="figure">
+<p><img src="img/wireshark-dissection-filter.png" alt="wireshark-dissection-filter.png" />
+</p>
+</div>
+</section>
+<section id="slide-orge2351a5">
+<h4 id="orge2351a5">Follow stream</h4>
+<p>
+Right-click on packet, Follow -&gt; TCP/UDP.
+</p>
+</section>
+<section id="slide-orgf1eecb8">
+<h4 id="orgf1eecb8">Statistics</h4>
+<p>
+At Wireshark toolbar, Statistics
+</p>
+
+<p>
+Particularly <code>Endpoints</code> and <code>Protocol Hierarchy</code>
+</p>
+</section>
+<section id="slide-org314dd32">
+<h4 id="org314dd32">Extract objects</h4>
+<p>
+At Wireshark toolbar, File -&gt; Export Objects, select protocol to export from.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org7ef9fc7">
+<h3 id="org7ef9fc7">reordercap</h3>
+<p>
+Reorder input file by timestamp into output file
+</p>
+
+<p>
+<code>reordercap INFILE OUTFILE</code>
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgea56e11">
+<h2 id="orgea56e11">Exercises</h2>
+<ul>
+<li>PcapPoisoning
+<a href="https://play.picoctf.org/practice/challenge/362?category=4&amp;page=2&amp;solved=0">https://play.picoctf.org/practice/challenge/362?category=4&amp;page=2&amp;solved=0</a></li>
+
+<li>Packets Primer
+<a href="https://play.picoctf.org/practice/challenge/286?category=4&amp;page=3">https://play.picoctf.org/practice/challenge/286?category=4&amp;page=3</a></li>
+
+<li>shark on wire 1
+<a href="https://play.picoctf.org/practice/challenge/30?category=4&amp;page=5">https://play.picoctf.org/practice/challenge/30?category=4&amp;page=5</a></li>
+
+<li>Ph4nt0m 1ntrud3r
+<a href="https://play.picoctf.org/practice/challenge/459?category=4&amp;page=1&amp;solved=0">https://play.picoctf.org/practice/challenge/459?category=4&amp;page=1&amp;solved=0</a></li>
+
+<li>Wireshark doo dooo do doo&hellip;
+<a href="https://play.picoctf.org/practice/challenge/115?category=4&amp;page=4">https://play.picoctf.org/practice/challenge/115?category=4&amp;page=4</a></li>
+
+<li>FindAndOpen
+<a href="https://play.picoctf.org/practice/challenge/348?category=4&amp;page=2&amp;solved=0">https://play.picoctf.org/practice/challenge/348?category=4&amp;page=2&amp;solved=0</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org1266bbc">
+<h2 id="org1266bbc">Exercises (Extra)</h2>
+<ul>
+<li>Eavesdrop
+<a href="https://play.picoctf.org/practice/challenge/264?category=4&amp;page=4">https://play.picoctf.org/practice/challenge/264?category=4&amp;page=4</a></li>
+
+<li>Trivial Flag Transfer Protocol
+<a href="https://play.picoctf.org/practice/challenge/103?category=4&amp;page=5">https://play.picoctf.org/practice/challenge/103?category=4&amp;page=5</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org4754ccb">
+<h2 id="org4754ccb">Further learning</h2>
+<ul>
+<li>pwn.college — Learn to Hack!
+<a href="https://pwn.college/">https://pwn.college/</a></li>
+<li>CCNA: Introduction to Networks
+<a href="https://www.netacad.com/courses/ccna-introduction-networks?courseLang=en-US">https://www.netacad.com/courses/ccna-introduction-networks?courseLang=en-US</a></li>
+<li>Free CCNA v1.1 200-301 | Complete Course 2026
+<a href="https://www.youtube.com/playlist?list=PLxbwE86jKRgMpuZuLBivzlM8s2Dk5lXBQ">https://www.youtube.com/playlist?list=PLxbwE86jKRgMpuZuLBivzlM8s2Dk5lXBQ</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-orgbac5588">
+<h2 id="orgbac5588">References</h2>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers">https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org5671fbc">
+<h2 id="org5671fbc">Hack time!</h2>
+<ul>
+<li><a href="https://play.picoctf.org/practice">https://play.picoctf.org/practice</a></li>
+
+</ul>
+</section>
+</section>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/search/search.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/zoom/zoom.js"></script>
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: false,
+center: true,
+slideNumber: 'c',
+rollingLinks: false,
+keyboard: true,
+mouseWheel: false,
+fragmentInURL: false,
+hashOneBasedIndex: false,
+pdfSeparateFragments: true,
+overview: true,
+
+transition: 'slide',
+transitionSpeed: 'default',
+
+// Plugins with reveal.js 4.x
+plugins: [ RevealMarkdown, RevealNotes, RevealSearch, RevealZoom ],
+
+// Optional libraries used to extend reveal.js
+dependencies: [
+]
+
+});
+</script>
+</body>
+</html>

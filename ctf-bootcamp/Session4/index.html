@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Generated on 2026-03-28 Sat 13:30 -->
+<meta charset="utf-8"/>
+<title>Hacking Bootcamp S4: <code>~help disassemble~</code></title>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css"/>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/dracula.css" id="theme"/>
+
+<link rel="stylesheet" href="./local.css"/>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1>Hacking Bootcamp S4: <code>~help disassemble~</code></h1><h2></h2>
+</section>
+<section>
+<section id="slide-org571a4b5">
+<h2 id="org571a4b5">Today</h2>
+<div style="font-size: 90%">
+<ul>
+<li>Static analysis</li>
+<li>Dynamic analysis</li>
+<li>Exercises</li>
+
+</ul>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org763aac3">
+<h2 id="org763aac3">Tools</h2>
+<p>
+Install please:
+</p>
+<ul>
+<li>Editor of choice (e.g., VS Code, VIM, Emacs)</li>
+<li>cfr</li>
+<li>java</li>
+<li>python</li>
+<li>ipython</li>
+<li>Ghidra</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-orgdb8ff23">
+<h2 id="orgdb8ff23">Reverse engineering</h2>
+<p>
+Reverse engineering is the process of understanding the behaviour of a system
+based on an analysis of its source code or source code artifacts (compilation
+output).
+</p>
+
+<p>
+Normally we <i>forward engineer</i> a program from a specification, in reverse
+engineering we try to infer the specification from the program.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgfd2a4bc">
+<h2 id="orgfd2a4bc">General workflow</h2>
+<ol>
+<li>Identify entry point (main)</li>
+<li>Find user inputs</li>
+<li>Identify flow of data (specially input)</li>
+<li>Understand (and <b>reverse</b>) transformations</li>
+<li>Reconstruct valid input (gets us the flag)</li>
+
+</ol>
+</section>
+</section>
+<section>
+<section id="slide-org5098ed0">
+<h2 id="org5098ed0">Static analysis</h2>
+<ul>
+<li>Analyze the program without running it (statically)</li>
+<li>We might have the source code of the program, or just the compilation artifacts
+<ul>
+<li>If only the compilation artifacts are present our job is harder</li>
+<li>We might be able to get some possible source code from the artifacts (decompilation)</li>
+
+</ul></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org26f1679">
+<h3 id="org26f1679">Compiled forms</h3>
+<ul>
+<li>Java class</li>
+<li>Python Bytecode</li>
+<li>x86-64</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org935399e">
+<h2 id="org935399e">Dynamic analysis</h2>
+<ul>
+<li>We run the program and observe its behaviour</li>
+<li>We can insert debugging statements and other instrumentation</li>
+<li>We might also control some parts of the program execution using debugging tools</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org5d88057">
+<h2 id="org5d88057"></h2>
+<p>
+Static and dynamic analysis are complementary
+</p>
+
+<p>
+Static analysis gives us a first idea of what the program might be doing
+</p>
+
+<p>
+Dynamic analysis allows us to test our hypothesis
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgefb1e70">
+<h2 id="orgefb1e70">Tools</h2>
+<div class="outline-text-2" id="text-orgefb1e70">
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org3eeee23">
+<h3 id="org3eeee23">Python</h3>
+<div class="outline-text-3" id="text-org3eeee23">
+</div>
+</section>
+<section id="slide-orga11ad92">
+<h4 id="orga11ad92"><code>print</code></h4>
+<p>
+Good ol&rsquo; print
+</p>
+</section>
+<section id="slide-org9bb4af0">
+<h4 id="org9bb4af0">prettyprint</h4>
+<pre class="example">
+from pprint import pprint
+</pre>
+
+<p>
+A prettier <code>print</code>
+</p>
+</section>
+<section id="slide-orgec869df">
+<h4 id="orgec869df"><code>breakpoint()</code></h4>
+<p>
+Pauses execution and opens the Python debugger
+</p>
+
+<p>
+<code>help</code> for help
+</p>
+</section>
+<section id="slide-org03276f9">
+<h4 id="org03276f9"><code>ipython</code></h4>
+<p>
+A better, interactive Python shell
+</p>
+
+<p>
+Useful for testing how snippets of code behave
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org836e66f">
+<h3 id="org836e66f">Java</h3>
+<div class="outline-text-3" id="text-org836e66f">
+</div>
+</section>
+<section id="slide-org73f6b84">
+<h4 id="org73f6b84"><code>System.out.println</code></h4>
+<p>
+Java&rsquo;s print with trailing line
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org862fadc">
+<h3 id="org862fadc">x86-64</h3>
+<div class="outline-text-3" id="text-org862fadc">
+</div>
+</section>
+<section id="slide-org2ee5efb">
+<h4 id="org2ee5efb">Ghidra</h4>
+<p>
+Reverse engineering tool that analyzes compiled binaries
+</p>
+
+<p>
+Decompiles machine code into feasible C code (C code that would result in similar machine code)
+</p>
+<ul class="org-ul">
+<li><a id="org406c5ba"></a>Basic usage<br />
+<ul>
+<li>The decompiler output is not the most readable C code</li>
+<li>It&rsquo;s our job to make it make sense</li>
+<li>To do so, we can:
+<ul>
+<li>Rename variables and functions (right click -&gt; rename)</li>
+<li>Change the types of variables and functions (right click -&gt; change type)</li>
+<li>Add comments (right click -&gt; add comment) to explain our inferred logic</li>
+
+</ul></li>
+
+</ul>
+</li>
+</ul>
+</section>
+<section id="slide-orgc5c6c59">
+<h4 id="orgc5c6c59">GDB</h4>
+<p>
+GNU Debugger
+</p>
+
+<p>
+Allows us to run and debug C (and other language) compiled programs
+</p>
+
+<p>
+As most of our programs will be compiled without debugging information (source
+code information), we will need to understand x86-64 assembly to be able to use
+GDB
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org0813cb6">
+<h2 id="org0813cb6">Language Documentation</h2>
+<ul>
+<li><a href="https://docs.python.org/3/">https://docs.python.org/3/</a> (Python)</li>
+<li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/index.html">https://docs.oracle.com/en/java/javase/25/docs/api/index.html</a> (Java)</li>
+<li><a href="https://en.cppreference.com/w/c/">https://en.cppreference.com/w/c/</a> (C)</li>
+<li><a href="https://devdocs.io/">https://devdocs.io/</a> (Many languages and other technologies)</li>
+
+</ul>
+
+<p>
+You should also search for the documentation of any used libraries.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org5f8c6fc">
+<h2 id="org5f8c6fc">Exercises - Java</h2>
+<ul>
+<li>vault-door-training
+<a href="https://play.picoctf.org/practice/challenge/7">https://play.picoctf.org/practice/challenge/7</a></li>
+
+<li>Safe Opener
+<a href="https://play.picoctf.org/practice/challenge/294">https://play.picoctf.org/practice/challenge/294</a></li>
+
+<li>Safe Opener 2
+<a href="https://play.picoctf.org/practice/challenge/375">https://play.picoctf.org/practice/challenge/375</a></li>
+
+<li>Fresh Java
+<a href="https://play.picoctf.org/practice/challenge/271">https://play.picoctf.org/practice/challenge/271</a></li>
+
+<li>vault-door-1
+<a href="https://play.picoctf.org/practice/challenge/12">https://play.picoctf.org/practice/challenge/12</a></li>
+
+<li>vault-door-3
+<a href="https://play.picoctf.org/practice/challenge/60">https://play.picoctf.org/practice/challenge/60</a></li>
+
+<li>vault-door-4
+<a href="https://play.picoctf.org/practice/challenge/71">https://play.picoctf.org/practice/challenge/71</a></li>
+
+<li>vault-door-5
+<a href="https://play.picoctf.org/practice/challenge/77">https://play.picoctf.org/practice/challenge/77</a></li>
+
+<li>vault-door-6
+<a href="https://play.picoctf.org/practice/challenge/45">https://play.picoctf.org/practice/challenge/45</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org701ad47">
+<h2 id="org701ad47">Exercises - Python</h2>
+<ul>
+<li>Flag Hunters
+<a href="https://play.picoctf.org/practice/challenge/472">https://play.picoctf.org/practice/challenge/472</a></li>
+
+<li>Transformation
+<a href="https://play.picoctf.org/practice/challenge/104">https://play.picoctf.org/practice/challenge/104</a></li>
+
+<li>Tap into Hash
+<a href="https://play.picoctf.org/practice/challenge/466">https://play.picoctf.org/practice/challenge/466</a></li>
+
+<li>Quantum Scrambler
+<a href="https://play.picoctf.org/practice/challenge/479">https://play.picoctf.org/practice/challenge/479</a></li>
+
+<li>unpackme.py
+<a href="https://play.picoctf.org/practice/challenge/314">https://play.picoctf.org/practice/challenge/314</a></li>
+
+<li>patchme.py
+<a href="https://play.picoctf.org/practice/challenge/287">https://play.picoctf.org/practice/challenge/287</a></li>
+
+<li>bloat.py
+<a href="https://play.picoctf.org/practice/challenge/256">https://play.picoctf.org/practice/challenge/256</a></li>
+
+<li>crackme-py
+<a href="https://play.picoctf.org/practice/challenge/175">https://play.picoctf.org/practice/challenge/175</a></li>
+
+<li>Chronohack
+<a href="https://play.picoctf.org/practice/challenge/468">https://play.picoctf.org/practice/challenge/468</a></li>
+
+<li>Picker I
+<a href="https://play.picoctf.org/practice/challenge/400">https://play.picoctf.org/practice/challenge/400</a></li>
+
+<li>Picker II
+<a href="https://play.picoctf.org/practice/challenge/401">https://play.picoctf.org/practice/challenge/401</a></li>
+
+<li>Picker III
+<a href="https://play.picoctf.org/practice/challenge/402">https://play.picoctf.org/practice/challenge/402</a></li>
+
+<li>keygenme-py
+<a href="https://play.picoctf.org/practice/challenge/121">https://play.picoctf.org/practice/challenge/121</a></li>
+
+<li>weirdSnake
+<a href="https://play.picoctf.org/practice/challenge/428">https://play.picoctf.org/practice/challenge/428</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org0bdaafe">
+<h2 id="org0bdaafe">Exercises - x86-64</h2>
+<ul>
+<li>file-run1
+<a href="https://play.picoctf.org/practice/challenge/266">https://play.picoctf.org/practice/challenge/266</a></li>
+
+<li>file-run2
+<a href="https://play.picoctf.org/practice/challenge/267">https://play.picoctf.org/practice/challenge/267</a></li>
+
+<li>ASCII FTW
+<a href="https://play.picoctf.org/practice/challenge/389">https://play.picoctf.org/practice/challenge/389</a></li>
+
+<li>packer
+pack
+<a href="https://play.picoctf.org/practice/challenge/421">https://play.picoctf.org/practice/challenge/421</a></li>
+
+<li>FactCheck
+<a href="https://play.picoctf.org/practice/challenge/416">https://play.picoctf.org/practice/challenge/416</a></li>
+
+<li>Shop
+<a href="https://play.picoctf.org/practice/challenge/134">https://play.picoctf.org/practice/challenge/134</a></li>
+
+<li>Bbbbloat
+<a href="https://play.picoctf.org/practice/challenge/255">https://play.picoctf.org/practice/challenge/255</a></li>
+
+<li>Reverse
+<a href="https://play.picoctf.org/practice/challenge/372">https://play.picoctf.org/practice/challenge/372</a></li>
+
+<li>perplexed
+<a href="https://play.picoctf.org/practice/challenge/458">https://play.picoctf.org/practice/challenge/458</a></li>
+
+<li>Classic Crackme 0x100
+<a href="https://play.picoctf.org/practice/challenge/409">https://play.picoctf.org/practice/challenge/409</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org63015a6">
+<h2 id="org63015a6">Further learning</h2>
+<p>
+For learning x86-64
+</p>
+<ul>
+<li>pwn.college — Learn to Hack!
+<a href="https://pwn.college/">https://pwn.college/</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-orgce4f6f9">
+<h2 id="orgce4f6f9">Hack time!</h2>
+<ul>
+<li><a href="https://play.picoctf.org/practice">https://play.picoctf.org/practice</a></li>
+
+</ul>
+</section>
+</section>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/search/search.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/zoom/zoom.js"></script>
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: false,
+center: true,
+slideNumber: 'c',
+rollingLinks: false,
+keyboard: true,
+mouseWheel: false,
+fragmentInURL: false,
+hashOneBasedIndex: false,
+pdfSeparateFragments: true,
+overview: true,
+
+transition: 'slide',
+transitionSpeed: 'default',
+
+// Plugins with reveal.js 4.x
+plugins: [ RevealMarkdown, RevealNotes, RevealSearch, RevealZoom ],
+
+// Optional libraries used to extend reveal.js
+dependencies: [
+]
+
+});
+</script>
+</body>
+</html>

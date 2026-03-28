@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Generated on 2026-03-28 Sat 13:30 -->
+<meta charset="utf-8"/>
+<title>Hacking Bootcamp S5: Unsanitary</title>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css"/>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/dracula.css" id="theme"/>
+
+<link rel="stylesheet" href="./local.css"/>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1>Hacking Bootcamp S5: Unsanitary</h1><h2></h2>
+</section>
+<section>
+<section id="slide-org8ca0818">
+<h2 id="org8ca0818">Today</h2>
+<div style="font-size: 90%">
+<ul>
+<li>URL encoding</li>
+<li>Burp suite</li>
+<li>File inclusion</li>
+<li>Command injection
+<ul>
+<li>Bash composite commands</li>
+
+</ul></li>
+<li>Hack time!</li>
+
+</ul>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org6f869a1">
+<h2 id="org6f869a1">Tools</h2>
+<p>
+Install please:
+</p>
+<ul>
+<li>Burp Suite</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org6e436cb">
+<h2 id="org6e436cb">URL Encoding</h2>
+<ul>
+<li>Encoding method to allow arbitrary data in URLs
+<ul>
+<li>Also used for form data</li>
+
+</ul></li>
+<li>Some characters have special meaning in URLs
+<ul>
+<li>Nonetheless, all characters can be url-encoded and the server should interpret them correctly</li>
+
+</ul></li>
+<li>To avoid the special meaning we url-encode them by replacing the character with a percentage followed by two hexadecimal digits representing the character byte value (remember ASCII)
+<ul>
+<li>e.g., space is encoded to <code>%20</code>, <code>&amp;</code> (ampersand) to <code>%26</code></li>
+<li>As a special allowance, spaces can be encoded to <code>+</code> (plus sign)</li>
+
+</ul></li>
+
+</ul>
+
+<p>
+Note: httpie takes care of this by itself, you have to url-encode when using Burp
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orge9709f7">
+<h2 id="orge9709f7">POST forms</h2>
+<p>
+HTML forms upload their content as <code>application/x-www-form-urlencoded</code> by default
+</p>
+
+<p>
+Data is sent as key–value pairs separated by &amp; (ampersand):
+</p>
+<pre class="example">
+key1=value1&amp;key2=value2
+</pre>
+
+<p>
+Special characters are URL-encoded
+</p>
+
+<ul>
+<li>Space -&gt; <code>+</code> (or <code>%20</code>)</li>
+<li><code>&amp;</code> -&gt; <code>%26</code></li>
+<li><code>=</code> -&gt; <code>%3D</code></li>
+
+</ul>
+
+<p>
+Note: JSON is quite popular nowadays and does not url-encode the request (or response) body
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orge40d99b">
+<h2 id="orge40d99b">Burp Suite</h2>
+<p>
+Web application penetration testing toolkit
+</p>
+
+<p>
+Lets you intercept, view, and modify HTTP requests and responses (among other functions)
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgbbdfae5">
+<h3 id="orgbbdfae5">Proxy</h3>
+
+<div id="org9135d59" class="figure">
+<p><img src="img/burpsuite-proxy.png" alt="burpsuite-proxy.png" />
+</p>
+</div>
+
+</section>
+<section>
+
+<ul>
+<li>Allows intercepting live traffic (Intercept on)
+<ul>
+<li>Editing requests and responses</li>
+<li>Saves history of intercepted traffic</li>
+
+</ul></li>
+<li>Sets a proxy to intercept
+<ul>
+<li>Recommended to use the Burp Suite included browser</li>
+<li>Can be used with other tools or your regular browser</li>
+
+</ul></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-orgbafe429">
+<h3 id="orgbafe429">Repeater</h3>
+
+<div id="orgd5faacb" class="figure">
+<p><img src="img/burpsuite-repeater.png" alt="burpsuite-repeater.png" />
+</p>
+</div>
+
+</section>
+<section>
+
+<ul>
+<li>Allows sending requests and viewing responses</li>
+<li>Like we did with httpie but now we edit the raw request</li>
+<li>You usually get an initial request by sending one from the proxy history (right click -&gt; send to repeater)</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org2e1420a">
+<h3 id="org2e1420a">Intruder</h3>
+<ul>
+<li>Allows trying requests with marked sections replaced with some other strings</li>
+<li>Useless in the Burp Suite Community version (the free one), it&rsquo;s limited to 1 request per second</li>
+<li>We will see alternatives in the following weeks</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org6c06c9b">
+<h2 id="org6c06c9b">Exercises</h2>
+<p>
+Complete the missing ones from web introduction
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orga95eb5e">
+<h2 id="orga95eb5e">File inclusion</h2>
+<p>
+A web application may have a dynamic page inclusion that allows reading files from the filesystem.
+</p>
+
+<p>
+The user input that specifies the page to read should be validated to be in some allowed paths.
+</p>
+
+<p>
+Otherwise, we may read arbitrary files in the server&rsquo;s filesystem.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgeaf7eeb">
+<h3 id="orgeaf7eeb">Example</h3>
+<div class="org-src-container">
+
+<pre class="src src-php"><span style="color: #c397d8;">&lt;?php</span>
+
+$<span style="color: #e7c547;">log</span> = $<span style="color: #e7c547;">_GET</span>[<span style="color: #70c0b1;">'log'</span>];
+
+$<span style="color: #e7c547;">base_dir</span> = <span style="color: #70c0b1;">"/var/log/app/"</span>;
+
+$<span style="color: #e7c547;">file</span> = $<span style="color: #e7c547;">base_dir</span> . $<span style="color: #e7c547;">log</span>;
+
+<span style="color: #b9ca4a;">if</span> (file_exists($<span style="color: #e7c547;">file</span>)) {
+    <span style="color: #b9ca4a;">echo</span> <span style="color: #70c0b1;">"&lt;pre&gt;"</span>;
+    readfile($<span style="color: #e7c547;">file</span>);
+    <span style="color: #b9ca4a;">echo</span> <span style="color: #70c0b1;">"&lt;/pre&gt;"</span>;
+} <span style="color: #b9ca4a;">else</span> {
+    <span style="color: #b9ca4a;">echo</span> <span style="color: #70c0b1;">"Log not found"</span>;
+}
+<span style="color: #c397d8;">?&gt;</span>
+</pre>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org5f7752b">
+<h3 id="org5f7752b">Traversing</h3>
+<p>
+Remember absolute and relative paths (<code>..</code> goes up in the directory hierarchy)
+</p>
+
+<pre class="example">
+/var/log/app/ + ../../../../etc/passwd = /etc/passwd
+</pre>
+
+<p>
+<code>/proc/self/cwd</code> may also be useful
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgbe68ba3">
+<h3 id="orgbe68ba3">What may we read?</h3>
+<ul>
+<li>flags</li>
+<li>databases</li>
+<li>configuration files</li>
+<li>source code</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-orgb981ad4">
+<h2 id="orgb981ad4">Exercises</h2>
+<ul>
+<li>Forbidden Paths</li>
+
+</ul>
+<p>
+<a href="https://play.picoctf.org/practice/challenge/270">https://play.picoctf.org/practice/challenge/270</a>
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org15c0aa1">
+<h2 id="org15c0aa1">Composing commands</h2>
+<ul>
+<li>Bash (and other Unix shells) allow composing commands in a single <i>command</i>
+<ul>
+<li>This means that many commands may be executed in a <code>system()</code> call or equivalent</li>
+<li>Check C&rsquo;s <code>system()</code>, Python&rsquo;s <code>os.system()</code>, PHP&rsquo;s <code>system()</code>
+<ul>
+<li>And many other alternatives in each language that vary on whether they invoke shells</li>
+
+</ul></li>
+
+</ul></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-orgc07381f">
+<h3 id="orgc07381f">Piping commands (|)</h3>
+<p>
+As we have seen before, we can make it so that a command receives stdin from another stdout with:
+</p>
+
+<pre class="example">
+cmd1 | cmd2
+</pre>
+
+<p>
+Of course, this allows invoking multiple commands in a single composed command too.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org64f9b88">
+<h3 id="org64f9b88">Unconditional execution (;)</h3>
+<p>
+Execute <code>cmd2</code> after <code>cmd1</code> finishes
+</p>
+
+<pre class="example">
+cmd1; cmd2
+</pre>
+</section>
+<section id="slide-orgab7aa7f">
+<h4 id="orgab7aa7f">Newline</h4>
+<p>
+Newline can be used for this too
+</p>
+
+<pre class="example">
+cmd1
+cmd2
+</pre>
+</section>
+</section>
+<section>
+<section id="slide-orgcf59d22">
+<h3 id="orgcf59d22">Only if success (&amp;&amp;)</h3>
+<p>
+Execute <code>cmd2</code> only if <code>cmd1</code> succeeds
+</p>
+
+<pre class="example">
+cmd1 &amp;&amp; cmd2
+</pre>
+
+<p>
+You can check exit status of the last executed command with <code>echo $?</code>. Zero
+means success, non-zero means failure
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org63e0e4b">
+<h3 id="org63e0e4b">Only if failure (||)</h3>
+<p>
+Execute <code>cmd2</code> only if <code>cmd1</code> fails
+</p>
+
+<pre class="example">
+cmd1 || cmd2
+</pre>
+</section>
+</section>
+<section>
+<section id="slide-orgeb128a5">
+<h3 id="orgeb128a5">Background (&amp;)</h3>
+<p>
+Start <code>cmd1</code> and then start <code>cmd2</code> (don&rsquo;t wait for <code>cmd1</code>&rsquo;s end)
+</p>
+
+<pre class="example">
+cmd1 &amp; cmd2
+</pre>
+
+</section>
+<section>
+
+<p>
+Can be used for a single command to background its execution (i.e., don&rsquo;t wait for finish)
+</p>
+
+<pre class="example">
+cmd1 &amp;
+</pre>
+</section>
+</section>
+<section>
+<section id="slide-orga015dff">
+<h3 id="orga015dff">Command replacement</h3>
+<p>
+We can also use command replacement syntax
+</p>
+
+<pre class="example">
+cmd1 `cmd2`
+cmd1 $(cmd2)
+</pre>
+
+<p>
+<code>cmd2</code> is evaluated first and its stdout is passed as an argument to <code>cmd1</code>
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org3c5b8b2">
+<h2 id="org3c5b8b2">Command injection</h2>
+<ul>
+<li>Sometimes web applications use functionality that requires calling to system commands</li>
+<li>Depending on the method by which the command is invoked and our input is collected, we could be able to <i>inject</i> additional commands to be executed</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org02ead82">
+<h3 id="org02ead82">Flask example</h3>
+<div class="org-src-container">
+
+<pre class="src src-python"><span style="color: #b9ca4a;">import</span> os
+<span style="color: #b9ca4a;">from</span> flask <span style="color: #b9ca4a;">import</span> Flask, request
+
+<span style="color: #e7c547;">app</span> <span style="color: #e78c45;">=</span> Flask(<span style="color: #c397d8;">__name__</span>)
+
+<span style="color: #7aa6da;">@app.route</span>(<span style="color: #70c0b1;">"/ping"</span>)
+<span style="color: #b9ca4a;">def</span> <span style="color: #e78c45;">ping</span>():
+    <span style="color: #e7c547;">host</span> <span style="color: #e78c45;">=</span> request.args.get(<span style="color: #70c0b1;">"host"</span>)
+    os.system(f<span style="color: #70c0b1;">"ping -c 1 </span>{host}<span style="color: #70c0b1;">"</span>)
+    <span style="color: #b9ca4a;">return</span> <span style="color: #70c0b1;">"Done"</span>
+</pre>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org026b194">
+<h3 id="org026b194">Testing for injection</h3>
+<p>
+To test endpoints for command injection vulnerabilities we usually try payloads using the aforementioned methods
+</p>
+
+<p>
+e.g.,
+</p>
+<pre class="example">
+http -vf http://94.237.120.74:37598/ ip='127.0.0.1; ls -la'
+http -vf http://94.237.120.74:37598/ ip=$'127.0.0.1\n{ls,-la}\n'
+</pre>
+</section>
+</section>
+<section>
+<section id="slide-org268ef04">
+<h3 id="org268ef04">Checking injection results</h3>
+<p>
+If we are lucky, the injection result will be available in the HTTP response
+</p>
+
+<p>
+Otherwise, we have <i>blind</i> command injection and will have to get our results in other way
+</p>
+
+<p>
+e.g., inject <code>sleep 5</code> conditionally, <code>curl</code> result to a server we control
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org00a4ab7">
+<h3 id="org00a4ab7">Evasion</h3>
+<p>
+As our input may be filtered or mangled in many ways, we will need to check for ways around the filters
+</p>
+
+<p>
+Check:
+</p>
+<ul>
+<li><a href="https://swisskyrepo.github.io/PayloadsAllTheThings/Command%20Injection/">https://swisskyrepo.github.io/PayloadsAllTheThings/Command%20Injection/</a></li>
+<li><a href="https://book.hacktricks.wiki/en/pentesting-web/command-injection.html">https://book.hacktricks.wiki/en/pentesting-web/command-injection.html</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org0b75e50">
+<h2 id="org0b75e50">Exercises</h2>
+<ul>
+<li>3v@l
+<a href="https://play.picoctf.org/practice/challenge/484">https://play.picoctf.org/practice/challenge/484</a></li>
+<li>caas
+<a href="https://play.picoctf.org/practice/challenge/202">https://play.picoctf.org/practice/challenge/202</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org69d7625">
+<h2 id="org69d7625">Further learning</h2>
+<ul>
+<li>pwn.college — Learn to Hack!
+<a href="https://pwn.college/">https://pwn.college/</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org2da2cb0">
+<h2 id="org2da2cb0">References</h2>
+<ul>
+<li><a href="https://developer.mozilla.org/">https://developer.mozilla.org/</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org695fda4">
+<h2 id="org695fda4">Hack time!</h2>
+<ul>
+<li><a href="https://play.picoctf.org/practice">https://play.picoctf.org/practice</a></li>
+
+</ul>
+</section>
+</section>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/search/search.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/zoom/zoom.js"></script>
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: false,
+center: true,
+slideNumber: 'c',
+rollingLinks: false,
+keyboard: true,
+mouseWheel: false,
+fragmentInURL: false,
+hashOneBasedIndex: false,
+pdfSeparateFragments: true,
+overview: true,
+
+transition: 'slide',
+transitionSpeed: 'default',
+
+// Plugins with reveal.js 4.x
+plugins: [ RevealMarkdown, RevealNotes, RevealSearch, RevealZoom ],
+
+// Optional libraries used to extend reveal.js
+dependencies: [
+]
+
+});
+</script>
+</body>
+</html>

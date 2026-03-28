@@ -1,0 +1,24 @@
+.reveal {
+    font-size: 1.5vw;
+}
+
+.reveal,
+body {
+    overflow: auto; /* or overflow-x / overflow-y if you want only horizontal/vertical */
+    height: 100%; /* make sure body takes full height */
+    margin: 0; /* reset default margin */
+}
+
+/* .slides { */
+/*     overflow: scroll !important; */
+/*     pointer-events: auto !important; */
+/* } */
+
+/* .slides { */
+/*   -ms-overflow-style: none;  /\* IE and Edge *\/ */
+/*   scrollbar-width: none;     /\* Firefox *\/ */
+/* } */
+
+/* .slides::-webkit-scrollbar { */
+/*   display: none;             /\* Chrome, Safari, and Opera *\/ */
+/* } */
