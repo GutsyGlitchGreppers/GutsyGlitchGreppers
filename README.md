@@ -116,7 +116,7 @@ bundler install jekyll
 * jekyll plugins
 
 ```bash
-gem install jekyll-sitemap jekyll-feed jekyll-seo-tag jekyll-mermaid
+gem install jekyll-sitemap jekyll-feed jekyll-seo-tag
 ```
 
 ### Installation
