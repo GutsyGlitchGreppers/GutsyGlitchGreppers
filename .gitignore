@@ -8,7 +8,6 @@ _site
 # Ruby Gem
 *.gem
 .bundle
-Gemfile.lock
 **/vendor/bundle
 
 # Node.js and NPM
