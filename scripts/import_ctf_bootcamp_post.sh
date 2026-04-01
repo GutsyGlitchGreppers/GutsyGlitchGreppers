@@ -6,7 +6,7 @@ usage() {
 Usage:
   scripts/import_ctf_bootcamp_post.sh <org-path> --session Session0 [--slug session-0-hello-computer] [--date YYYY-MM-DD] [--author "GGG"]
 
-Converts an Org file into a Markdown article in collections/_ctf_bootcamp/
+Converts an Org file into an HTML article in collections/_ctf_bootcamp/
 and inserts a link to the existing slide deck under /ctf-bootcamp/<SessionN>/.
 EOF
 }
@@ -95,6 +95,40 @@ fi
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+org_dir="$(cd "$(dirname "$org_path")" && pwd)"
+session_index="ctf-bootcamp/${session}/index.html"
+if [[ ! -f "$session_index" ]]; then
+  echo "Missing slide deck for session: $session_index" >&2
+  exit 1
+fi
+
+source_attach_dir="${org_dir}/.attach"
+target_attach_dir="ctf-bootcamp/${session}/img/attach"
+rm -rf "$target_attach_dir"
+if [[ -d "$source_attach_dir" ]]; then
+  mkdir -p "$target_attach_dir"
+  python3 - "$source_attach_dir" "$target_attach_dir" <<'PY'
+import shutil
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1])
+target = Path(sys.argv[2])
+
+for path in source.rglob("*"):
+    relative = path.relative_to(source)
+    parts = list(relative.parts)
+    if path.is_file() and parts:
+        parts[-1] = parts[-1].lstrip("_") or parts[-1]
+    destination = target.joinpath(*parts)
+    if path.is_dir():
+        destination.mkdir(parents=True, exist_ok=True)
+    else:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, destination)
+PY
+fi
+
 title="$(awk 'BEGIN { IGNORECASE = 1 } /^#\+title:/ { sub(/^#\+title:[[:space:]]*/, "", $0); print; exit }' "$org_path")"
 if [[ -z "$title" ]]; then
   echo "Could not extract #+title from $org_path" >&2
@@ -107,16 +141,13 @@ fi
 
 mkdir -p collections/_ctf_bootcamp
 
-tmp_markdown="$(mktemp)"
 tmp_org="$(mktemp)"
+tmp_html="$(mktemp)"
 cleanup() {
-  rm -f "$tmp_markdown"
-  rm -f "$tmp_org"
+  rm -f "$tmp_org" "$tmp_html"
 }
 trap cleanup EXIT
 
-# Pandoc drops raw LaTeX environments like \begin{align*}...\end{align*},
-# so preserve them with placeholders before conversion and restore afterward.
 python3 - "$org_path" "$tmp_org" <<'PY'
 import re
 import sys
@@ -125,47 +156,85 @@ from pathlib import Path
 source_path = Path(sys.argv[1])
 output_path = Path(sys.argv[2])
 text = source_path.read_text()
+
+math_envs = {
+    "align",
+    "align*",
+    "equation",
+    "equation*",
+    "gather",
+    "gather*",
+    "multline",
+    "multline*",
+}
+
 blocks = []
 
-def store_block(match):
+def replace_math(match):
+    env = match.group(1)
+    if env not in math_envs:
+        return match.group(0)
     blocks.append(match.group(0))
-    return f"CTFBOOTCAMPLATEXBLOCK{len(blocks) - 1}"
+    return f"CTFBOOTCAMPMATHBLOCK{len(blocks) - 1}"
 
-pattern = re.compile(r"\\begin\{([^}]+)\}.*?\\end\{\1\}", re.DOTALL)
-rewritten = pattern.sub(store_block, text)
-
+rewritten = re.sub(r"\\begin\{([^}]+)\}.*?\\end\{\1\}", replace_math, text, flags=re.DOTALL)
 output_path.write_text(rewritten)
 PY
 
-pandoc -f org -t gfm --wrap=none "$tmp_org" > "$tmp_markdown"
+pandoc -f org -t html --no-highlight "$tmp_org" > "$tmp_html"
 
-python3 - "$org_path" "$tmp_markdown" <<'PY'
+python3 - "$org_path" "$tmp_html" "$session" <<'PY'
 import re
 import sys
 from pathlib import Path
 
 source_text = Path(sys.argv[1]).read_text()
-markdown_path = Path(sys.argv[2])
-markdown = markdown_path.read_text()
+html_path = Path(sys.argv[2])
+session = sys.argv[3]
+html = html_path.read_text()
 
-blocks = re.findall(r"(\\begin\{([^}]+)\}.*?\\end\{\2\})", source_text, re.DOTALL)
-for i, (block, _) in enumerate(blocks):
-    math_block = f'<script type="math/tex; mode=display">\n{block}\n</script>'
-    markdown = markdown.replace(f"CTFBOOTCAMPLATEXBLOCK{i}", math_block)
+math_envs = {
+    "align",
+    "align*",
+    "equation",
+    "equation*",
+    "gather",
+    "gather*",
+    "multline",
+    "multline*",
+}
 
-markdown_path.write_text(markdown)
+def collect_math_blocks(text):
+    matches = []
+    for match in re.finditer(r"\\begin\{([^}]+)\}.*?\\end\{\1\}", text, flags=re.DOTALL):
+        if match.group(1) in math_envs:
+            matches.append(match.group(0))
+    return matches
+
+for i, block in enumerate(collect_math_blocks(source_text)):
+    replacement = f'<script type="math/tex; mode=display">\n{block}\n</script>'
+    html = html.replace(f"<p>CTFBOOTCAMPMATHBLOCK{i}</p>", replacement)
+    html = html.replace(f"CTFBOOTCAMPMATHBLOCK{i}", replacement)
+
+html = re.sub(r'src="(?:\./)?img/([^"]+)"', rf'src="/ctf-bootcamp/{session}/img/\1"', html)
+
+def rewrite_attach_src(match):
+    path = match.group(1)
+    parts = path.split("/")
+    if parts:
+        parts[-1] = parts[-1].lstrip("_") or parts[-1]
+    return f'src="/ctf-bootcamp/{session}/img/attach/' + "/".join(parts) + '"'
+
+html = re.sub(r'src="(?:\./)?\.attach/([^"]+)"', rewrite_attach_src, html)
+html = re.sub(r'\sstyle="[^"]*"', '', html)
+html = re.sub(r'<p>\s*(<img[^>]+>)\s*</p>', r'\1', html)
+
+html_path.write_text(html.strip() + "\n")
 PY
 
-# Remove leading blank lines from pandoc output.
-perl -0pi -e 's/\A\s+//' "$tmp_markdown"
-
-# Rewrite local image and attachment paths to the existing slide asset paths.
-perl -0pi -e 's{!\[(.*?)\]\((?:\./)?img/([^)]+)\)}{![$1](/ctf-bootcamp/'"$session"'/img/$2)}g' "$tmp_markdown"
-perl -0pi -e 's{!\[(.*?)\]\((?:\./)?\.attach/([^)]+)\)}{![$1](/ctf-bootcamp/'"$session"'/.attach/$2)}g' "$tmp_markdown"
-perl -0pi -e 's{<img\s+src="(?:\./)?img/([^"]+)"[^>]*>}{![](/ctf-bootcamp/'"$session"'/img/$1)}g' "$tmp_markdown"
-perl -0pi -e 's{<img\s+src="(?:\./)?\.attach/([^"]+)"[^>]*>}{![](/ctf-bootcamp/'"$session"'/.attach/$1)}g' "$tmp_markdown"
-
-output_path="collections/_ctf_bootcamp/${slug}.md"
+output_path="collections/_ctf_bootcamp/${slug}.html"
+markdown_path="collections/_ctf_bootcamp/${slug}.md"
+rm -f "$markdown_path"
 
 {
   printf -- "---\n"
@@ -175,8 +244,8 @@ output_path="collections/_ctf_bootcamp/${slug}.md"
   printf 'date: %s\n' "$date_value"
   printf 'comment: false\n'
   printf -- "---\n\n"
-  printf 'This article adapts the bootcamp session notes into a readable post. [View the slides](/ctf-bootcamp/%s/).\n\n' "$session"
-  cat "$tmp_markdown"
+  printf '<p>This article adapts the bootcamp session notes into a readable post. <a href="/ctf-bootcamp/%s/">View the slides</a>.</p>\n\n' "$session"
+  cat "$tmp_html"
   printf '\n'
 } > "$output_path"
 
