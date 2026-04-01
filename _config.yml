@@ -88,8 +88,6 @@ plugins:
   - jekyll-feed
   - jekyll-sitemap
   - jekyll-seo-tag
-  
-gems: [jekyll-mermaid]
 
 # 8. Others
 # Cross-Origin Resource Sharing header
