@@ -4,7 +4,7 @@ owner               : "GGG"
 url                 : "https://ggg.ninja"
 baseurl             : ""
 permalink           : /:title/
-description         : "A hacker-style note-keeping website template."
+description         : "GGG Orbit Base: writeups, blogs and such"
 markdown            : kramdown
 statement           :
 bgtext              : "GgǴǵĜĝĞğĠġĢģḠḡǦǧǤǥɢɡᶃᵍԌԍᏀᎶ⅁ℊℾⒼⓖ🄶🅖Ｇｇ𝐆𝐠𝑮𝑔𝒢𝒈𝓖𝓰𝔊𝔤𝕲𝕘𝖦𝖌𝗚𝗴𝘎𝘨𝙂𝙜𝙶𝚐ɓɠɞƓɞʛᴳ₲ϱϬϭႺᏳᏻꓖꬶꮐ"
@@ -15,9 +15,16 @@ bgtext              : "GgǴǵĜĝĞğĠġĢģḠḡǦǧǤǥɢɡᶃᵍԌԍᏀᎶ�
 collection_order    : 
   [
     "posts",
+    "ctf_bootcamp",
     "ctf",
   ]
 collections:
+  ctf_bootcamp:
+    output          : true
+    permalink       : /ctf-bootcamp/:slug
+    sort_by         : date
+    alias           : "CTF Bootcamp"
+    homepage_feed   : true
   ctf:   
     output          : true
     permalink       : /:collection/:year/:month/:day/:title
