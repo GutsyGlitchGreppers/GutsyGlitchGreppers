@@ -1,3 +1,5 @@
+@use "../abstracts" as theme;
+
 .page {
   height: 100%;
   width: 100%;
@@ -5,8 +7,8 @@
   padding: 0;
   position: fixed;
   // text-align: center;
-  background-color: $color-bg;
-  background-image: $image-background;
+  background-color: theme.$color-bg;
+  background-image: theme.$image-background;
 }
 .container {
   top: 0;
@@ -18,9 +20,9 @@
   overflow: none;
   margin: 0 auto;
   box-sizing: border-box; // interior border
-  background-color: rgba($color-postbg, 0.86);
-  border-left: $secondary-border;
-  border-right: $secondary-border;
+  background-color: rgba(theme.$color-postbg, 0.86);
+  border-left: theme.$secondary-border;
+  border-right: theme.$secondary-border;
 }
 
 html.persist-maximized .container,
@@ -38,30 +40,30 @@ html.persist-maximized .container,
   position: relative;
   z-index: 1;
   overflow-x: hidden;
-  @include thin_scrollbar;
+  @include theme.thin_scrollbar;
   article {
     margin: 0;
-    padding: calc(#{$header-height} + 10px) 19px 19px 19px;
+    padding: calc(#{theme.$header-height} + 10px) 19px 19px 19px;
     text-align: left !important;
     min-height: 88%; 
   }
   td {
-    border: $thin-border;  
+    border: theme.$thin-border;  
   }
   .encrypted {
-    color: rgba($color-warning, 0.9);
+    color: rgba(theme.$color-warning, 0.9);
     word-break: break-all;
   }
   .no-border {
     td {
-      border: 1px solid rgba($color-postbg, 0);
+      border: 1px solid rgba(theme.$color-postbg, 0);
     }
   }
 }
 // used to toggle absence of elements
 .show {
   visibility: visible !important;
-  @include fade_in;
+  @include theme.fade_in;
 }
 
 // screen auto-adjustment
@@ -74,9 +76,9 @@ html.persist-maximized .container,
     margin: 0;
     border-top: none;
     border-bottom: none;
-    border-left: $thick-border;
-    border-right: $thick-border;
-    background-color: rgba($color-postbg, 0.82);
+    border-left: theme.$thick-border;
+    border-right: theme.$thick-border;
+    background-color: rgba(theme.$color-postbg, 0.82);
   }
   .page .container .div_article {
     border: none;
@@ -91,8 +93,8 @@ html.persist-maximized .container,
   .page .container {
     border-top: none;
     border-bottom: none;
-    border-left: $medium-border;
-    border-right: $medium-border;
+    border-left: theme.$medium-border;
+    border-right: theme.$medium-border;
   }
   .page .container .div_article #main_atcl {
     padding: 0px 5px 5px 5px ;

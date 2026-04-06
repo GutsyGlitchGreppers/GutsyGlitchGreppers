@@ -1,8 +1,10 @@
+@use "../abstracts" as theme;
+
 // post-list
 .post_list {
   .td_title {
     text-transform: capitalize;
-    @include simple_link_style;
+    @include theme.simple_link_style;
   }
   .td_date {
     max-width: 100px;

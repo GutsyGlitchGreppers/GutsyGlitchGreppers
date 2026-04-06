@@ -1,15 +1,17 @@
+@use "../abstracts" as theme;
+
 .post_info {
   text-align: right;
   padding: 0 50px;
-  font-size: $font-smaller;
+  font-size: theme.$font-smaller;
   margin: 0;
-  color: $color-muted;
+  color: theme.$color-muted;
 }
 .abstract {
-  font-size: $font-smaller;
-  color: $color-muted;
+  font-size: theme.$font-smaller;
+  color: theme.$color-muted;
   padding: 1.1em 2.8em;
   p {
-    border-bottom: $thin-border;
+    border-bottom: theme.$thin-border;
   }
 }

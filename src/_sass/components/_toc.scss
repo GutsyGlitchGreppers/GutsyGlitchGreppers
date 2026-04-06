@@ -1,3 +1,5 @@
+@use "../abstracts" as theme;
+
 // table of content
 .popup_btn {
   position: relative;
@@ -11,29 +13,28 @@
 .div_toc {
   position: absolute;
   bottom: auto;
-  top: $toc-position + 0.6px;
+  top: theme.$toc-position + 0.6px;
   right: -0.5px;  
   z-index: 2;
   max-width: 70%;
   max-height: 85%;
   width: auto;
   overflow-x: hidden;
-  @include thin_scrollbar;
+  @include theme.thin_scrollbar;
   visibility: hidden;
-  background-color: rgba($color-postbg, 0.85);
+  background-color: rgba(theme.$color-postbg, 0.85);
   text-align: left;
   padding: 0px 0;
-  border-left: $medium-border;
-  border-bottom: $medium-border;
+  border-left: theme.$medium-border;
+  border-bottom: theme.$medium-border;
   ul {
     padding: 0 4px 0 18px;
     margin: 5px 4px;
     li a {
       font-size: 16px;
-      color: $color-primary;
+      color: theme.$color-primary;
       text-decoration: none;
     }
   }
 }
-
 

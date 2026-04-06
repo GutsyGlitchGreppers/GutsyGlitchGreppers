@@ -1,3 +1,5 @@
+@use "../abstracts" as theme;
+
 .footer {
   position: relative;
   display: block;
@@ -6,7 +8,7 @@
   height: auto;
   padding: 0;
   margin: 25px 0 0 0;
-  color: $color-muted;
+  color: theme.$color-muted;
   .nav_bar {
     bottom: 0;
     margin: 0;
@@ -22,14 +24,14 @@
     }
   }
   .footer_owner_info {
-    font-size: $footer-icon-size;
+    font-size: theme.$footer-icon-size;
     margin: 0;
     padding: 0;
     p {
-      font-size: $footer-text-size;
+      font-size: theme.$footer-text-size;
       margin: 0 0.5em 0 0.05em;
       display: inline;
-      font-family: $font-sans-serif;
+      font-family: theme.$font-sans-serif;
     }
   }
   .footer_copyright {
@@ -37,6 +39,6 @@
     font-size: 12px;
   }
   .footer_btn {
-    @include simple_link_style;
+    @include theme.simple_link_style;
   }
 }

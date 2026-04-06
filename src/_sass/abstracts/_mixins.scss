@@ -1,10 +1,12 @@
+@use "variables" as vars;
+
 @mixin thin_scrollbar {
   &::-webkit-scrollbar {
     width: 4.5px;
     height: 4.5px;
   }
   &::-webkit-scrollbar-thumb {
-    background-color: $color-primary;
+    background-color: vars.$color-primary;
   }
 }
 
@@ -19,9 +21,9 @@
   &:hover {
     text-decoration: none !important;
     font-weight: inherit;
-    color: $color-secondary !important;
+    color: vars.$color-secondary !important;
     cursor: pointer;
-    text-shadow: 0 0 4px $color-secondary;
+    text-shadow: 0 0 4px vars.$color-secondary;
   }  
 }
 
