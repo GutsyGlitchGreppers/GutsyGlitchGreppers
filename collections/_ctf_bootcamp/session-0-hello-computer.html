@@ -1,0 +1,966 @@
+---
+layout: post
+title: "CTF Bootcamp S0: Hello, computer"
+author: "GGG"
+date: 2026-04-06
+excerpt: "CTF Bootcamp S0: Hello, computer"
+comment: true
+---
+
+<p>This article adapts the bootcamp session notes into a readable post. <a href="/ctf-bootcamp/Session0/">View the slides</a>.</p>
+<h1 id="hacking">Hacking</h1>
+<blockquote>
+<p>By convention sweet is sweet, bitter is bitter, hot is hot, cold is
+cold, color is color; but in truth there are only atoms and the void. —
+Democritus</p>
+</blockquote>
+<h2 id="a-safe-server">A safe server?</h2>
+{% highlight python %}
+import time
+from flask import Flask, request
+
+app = Flask(__name__)
+
+SECRET_TOKEN = "hacky"
+
+
+@app.route("/")
+def protected():
+    token = request.headers.get("X-TOKEN")
+
+    if not token:
+        return "Missing token", 401
+
+    if strcmp(token, SECRET_TOKEN):
+        return "Hello admin user! Here is your secret content"
+    else:
+        return "WHO ARE YOU? GET OUT!", 403
+{% endhighlight %}
+{% highlight python %}
+def strcmp(s1, s2):
+    if len(s1) != len(s2):
+        return False
+
+    for c1, c2 in zip(s1, s2):
+        if c1 != c2:
+            return False
+        time.sleep(0.01)
+
+    return True
+
+
+if __name__ == "__main__":
+    app.run()
+{% endhighlight %}
+<h2 id="whats-wrong">What's wrong?</h2>
+<ul>
+<li>Time is a side-channel</li>
+<li>Comparing the user-provided input with the secret depends on the
+user-input</li>
+<li>More time is taken as more characters in the prefix of the
+user-input match the secret</li>
+<li>We can measure such times and infer the correct secret</li>
+</ul>
+<h2 id="poc-proof-of-concept">PoC (proof of concept)</h2>
+{% highlight text %}
+$ python3 hack.py
+Trying to find the character at position 1 with prefix ''
+..........................Found character at position 1: 'h'
+Median: 0.014210520494088996 Max: 0.014913284991052933 Min: 0.011371066997526214 Stddev: 0.0009157040256580121
+
+Following characters were:
+Character: 'o' Median: 0.0038346719957189634 Max: 0.004211759005556814 Min: 0.0018405050068395212 Stddev: 0.0005487564034908333 (73% slower)
+Character: 'i' Median: 0.0037917059962637722 Max: 0.004303172987420112 Min: 0.0014267200022004545 Stddev: 0.0006530132317953015 (73% slower)
+Character: 'j' Median: 0.0037598100025206804 Max: 0.004142267003771849 Min: 0.0015765940042911097 Stddev: 0.0007008104778241527 (73% slower)
+
+[snip…]
+
+Trying to find the character at position 5 with prefix 'hack'
+.........................
+
+The token is: 'hacky' !!!!!!!!!!
+{% endhighlight %}
+<h1 id="is-cybersecurity-hard">Is cybersecurity hard?</h1>
+<img src="/ctf-bootcamp/Session0/img/Security-Certification-Progression-Chart-v7.0.png"/>
+<img src="/ctf-bootcamp/Session0/img/cybersecurity-is-so-easy.jpg"/>
+<h1 id="cybersecurity-is-hard-lets-go-ctfing">Cybersecurity is hard,
+let's go CTFing</h1>
+<ul>
+<li>Self-contained hacking exercises</li>
+<li>Allows you to practice and research one exercise at a time</li>
+<li>We will mainly use PicoCTF</li>
+<li>Register please:
+<ul>
+<li><a href="https://play.picoctf.org">https://play.picoctf.org</a></li>
+<li><a href="https://play.picoctf.org/classrooms">https://play.picoctf.org/classrooms</a>
+<ul>
+<li>Join the classroom with code: <code class="verbatim">C7Re8J81k</code></li>
+</ul></li>
+</ul></li>
+</ul>
+<h2 id="categories">Categories</h2>
+<ul>
+<li><strong>Forensics</strong>: Examining digital artifacts to recover
+hidden or deleted data</li>
+<li><strong>Steganography (stego)</strong>: Finding hidden data inside
+files or media</li>
+<li><strong>Web Exploitation (web)</strong>: Finding and exploiting
+vulnerabilities in web applications</li>
+<li><strong>Binary Exploitation (pwn)</strong>: Exploiting bugs in
+compiled programs to control execution</li>
+<li><strong>Cryptography (crypto)</strong>: Breaking or abusing
+cryptographic systems</li>
+<li><strong>Reverse Engineering (rev)</strong>: Analyzing binaries or
+apps to understand and extract secrets</li>
+<li><strong>OSINT</strong>: Gathering useful information from public
+sources</li>
+<li><strong>Miscellaneous (misc)</strong>: General puzzles and
+challenges that do not fit other categories</li>
+</ul>
+<img src="/ctf-bootcamp/Session0/img/CTF categories.png"/>
+<h1 id="ggg">GGG</h1>
+<img src="/ctf-bootcamp/Session0/img/GGG.jpg"/>
+<p>CTF Team at UTEC</p>
+<p>Best (and only) peruvian team at CTF Time</p>
+<img src="/ctf-bootcamp/Session0/img/ggg-ctftime.png"/>
+<h2 id="me">Me</h2>
+<img src="/ctf-bootcamp/Session0/img/rock.png"/>
+<p>Alvaro</p>
+<p>CS graduate</p>
+<p>Cybersecurity speciality</p>
+<h1 id="plan">Plan</h1>
+<ol>
+<li>Linux, bits and bytes</li>
+<li>Forensics: File formats and steganography</li>
+<li>Forensics: Network protocols</li>
+<li>Web: Web apps fundamentals</li>
+<li>Web: Server side: CMDi and SQLi</li>
+<li>Web: Client side: XSS, CSRF</li>
+<li>Linux systems and some hacking (HackTheBox)</li>
+<li>Hack UTEC's network?</li>
+</ol>
+<p>To be decided:</p>
+<ul>
+<li>Cryptography</li>
+<li>GDB debugging</li>
+<li>x86 ASM for reversing</li>
+<li>Binary exploitation</li>
+</ul>
+<h1 id="todays-menu">Today's menu</h1>
+<ul>
+<li>Presentation</li>
+<li>Living in the terminal
+<ul>
+<li>Commands and arguments</li>
+<li>Files, paths, and working directories</li>
+<li>Command redirection</li>
+<li>Essential Linux commands</li>
+</ul></li>
+<li>How computers represent data
+<ul>
+<li>Binary and hexadecimal</li>
+<li>Signed numbers (two’s complement)</li>
+<li>Endianness and memory layout</li>
+</ul></li>
+<li>How text and data are encoded
+<ul>
+<li>ASCII, UTF-8</li>
+<li>Bytes and interpretation</li>
+<li>Base64</li>
+</ul></li>
+<li>Many exercises!</li>
+</ul>
+<h1 id="operating-system-os">Operating System (OS)</h1>
+<ul>
+<li>Software layer between computer hardware and applications.</li>
+<li>Manages the running programs, memory space, filesystems, attached
+devices, etc.</li>
+</ul>
+<h1 id="programs-and-processes">Programs and Processes</h1>
+<p>A program is a file with instructions for our CPU and OS.</p>
+<p>When executed, the OS creates a process (with some state) with the
+instructions and the CPU runs them.</p>
+<ul>
+<li>Program: Inert file with instructions</li>
+<li>Process: Running program with some state associated</li>
+</ul>
+<h1 id="commands">Commands</h1>
+<h2 id="whats-a-command">What's a command</h2>
+<p>A command is some executable available in the system.</p>
+<p>Running a command means that the OS starts a process with the
+executable code and passes the corresponding arguments and
+environment.</p>
+<p><strong>NOTE</strong>: actually, Bash has some <em>commands</em> that
+are in fact not system executables (e.g., aliases, builtins)</p>
+<h2 id="invoking-commands">Invoking commands</h2>
+<p>Open a terminal and type the command, arguments are specified after
+the command name. Commands can be specified specifying a path or be
+unqualified. If specified by path, the location must hold the file to be
+executed.</p>
+<p><strong>NOTE</strong>: Any program can invoke other program, Bash is
+just another program</p>
+<h3 id="example">Example</h3>
+<p><code class="verbatim">print_args.py</code></p>
+{% highlight python %}
+#!/usr/bin/env python3
+import sys
+
+for i, a in enumerate(sys.argv):
+    print(f'arg {i}: {a}')
+{% endhighlight %}
+<p>This python script prints all arguments given.</p>
+{% highlight text %}
+$ ./print_args.py
+arg 0: ./print_args.py
+
+$ $PWD/print_args.py
+arg 0: /tmp/tmp.x343BPOn09/print_args.py
+{% endhighlight %}
+<p>The first argument passed to a command (implicitly) is the executable
+name used to invoke it.</p>
+<p>Passing words after the command are arguments to the command.</p>
+{% highlight text %}
+$ ./print_args.py A B C
+arg 0: ./print_args.py
+arg 1: A
+arg 2: B
+arg 3: C
+{% endhighlight %}
+<h3 id="ifs"><code>$IFS</code></h3>
+<p><strong>NOTE</strong>: The characters in "$IFS" are used to separate
+the arguments.</p>
+{% highlight text %}
+$ echo "${IFS@Q}"
+$' \t\n'
+{% endhighlight %}
+<h3 id="escaping-ifs">Escaping "$IFS"</h3>
+<p>As <code>$IFS</code> characters separate words, arguments using such
+characters must be quoted (<code class="verbatim">""</code> or <code class="verbatim">''</code>) or escaped (<code class="verbatim">\</code>).</p>
+{% highlight text %}
+$ ./print_args.py "A B" C D
+arg 0: ./print_args.py
+arg 1: A B
+arg 2: C
+arg 3: D
+
+$ ./print_args.py A\ B C D
+arg 0: ./print_args.py
+arg 1: A B
+arg 2: C
+arg 3: D
+{% endhighlight %}
+<h3 id="arguments-are-just-strings">Arguments are just strings</h3>
+<p>It's up to the command to interpret as whatever they need. E.g., they
+must resolve the paths to files, convert the strings to integers,
+etc.</p>
+<h3 id="example-1">Example</h3>
+<p><code class="verbatim">sum_two.py</code></p>
+{% highlight text %}
+#!/usr/bin/env python
+import sys
+
+print(sys.argv[1] + sys.argv[2])
+{% endhighlight %}
+{% highlight text %}
+$ ./sum_two.py 1 2
+12
+{% endhighlight %}
+<p>Python summed the strings and the result is the concatenation.</p>
+<p>If we wanted the integer sum we need to convert them to the
+datatype.</p>
+<p>Similar operations should be done in other languages</p>
+<p><code class="verbatim">sum_two_fixed.py</code></p>
+{% highlight text %}
+#!/usr/bin/env python
+import sys
+
+print(int(sys.argv[1]) + int(sys.argv[2]))
+{% endhighlight %}
+{% highlight text %}
+$ ./sum_two_fixed.py 1 2
+3
+{% endhighlight %}
+<h2 id="paths">Paths</h2>
+<p>Paths to files can be specified in relative or absolute form.</p>
+<h3 id="absolute-paths">Absolute paths</h3>
+<p>Specify the same location anywhere in the system. Start with
+<code>/</code></p>
+<p>Examples:</p>
+{% highlight text %}
+$ cat /etc/passwd
+
+$ cat /proc/1/environ
+{% endhighlight %}
+<h3 id="relative-paths">Relative paths</h3>
+<p>Start with <code>./</code>, <code>../</code>, or with the name of a
+file/directory.</p>
+<p>Examples:</p>
+{% highlight text %}
+$ cat ./file.txt
+$ cat file.txt  # Same as last one
+$ cat ../file_in_parent.txt
+{% endhighlight %}
+<p>They are resolved relative to the shell <strong>present working
+directory</strong> (PWD).</p>
+<h3 id="pwd"><code>$PWD</code></h3>
+<p>Each Linux process (e.g., Bash) has a PWD associated to it by the
+OS.</p>
+<p>This can be changed by the process itself (OS: <code>chdir</code>
+syscall).</p>
+<p>Bash uses <code>cd</code> builtin (e.g., <code>cd some/path</code>).
+C programs would do the <code>chdir</code> syscall. Python has
+<code>os.chdir()</code>.</p>
+<p><strong>Note</strong>: Target path can be relative or absolute.</p>
+<h3 id="python-example">Python example</h3>
+{% highlight text %}
+In [1]: import os
+
+In [2]: os.getcwd()
+Out[2]: '/home/hacker'
+
+In [3]: os.chdir("Desktop")
+
+In [4]: os.getcwd()
+Out[4]: '/home/hacker/Desktop'
+{% endhighlight %}
+<h1 id="some-commands">Some commands</h1>
+<h2 id="echo"><code>echo</code></h2>
+<p>Display text</p>
+<p><code>echo STRING</code></p>
+{% highlight text %}
+$ echo 'Hello, world'
+Hello, world
+{% endhighlight %}
+<h2 id="pwd-1"><code>pwd</code></h2>
+<p>Print the name of the working directory</p>
+{% highlight text %}
+$ pwd
+/home/hacker
+{% endhighlight %}
+<h2 id="cd"><code>cd</code></h2>
+<p>Change the working directory (also called CWD, current working
+directory)</p>
+<p><code>cd DIR</code></p>
+{% highlight text %}
+$ pwd
+/home/hacker
+
+$ cd Desktop/
+
+$ pwd
+/home/hacker/Desktop
+
+$ cd /etc/systemd/
+
+$ pwd
+/etc/systemd
+{% endhighlight %}
+<p><strong>Note</strong>: This is not actually an external executable
+but a bash builtin that changes the process' CWD</p>
+<h2 id="ls"><code>ls</code></h2>
+<p>List directory contents</p>
+<p><code>ls [DIR]</code></p>
+{% highlight text %}
+$ ls
+A  B  C
+
+$ ls A
+file_A_001.txt  file_A_002.txt  file_A_003.txt
+file_A_004.txt  file_A_005.txt
+{% endhighlight %}
+<h2 id="cat"><code>cat</code></h2>
+<p>Concatenate file contents</p>
+<p><code>cat FILE1 FILE2</code></p>
+{% highlight text %}
+$ cat hello.txt
+Hello, world!
+
+$ cat hello.txt hello.txt
+Hello, world!
+Hello, world!
+
+$ cat hello_tab.txt
+Hello   there,  friend
+
+$ cat -A hello_tab.txt
+Hello^Ithere,^Ifriend$
+{% endhighlight %}
+<h2 id="ssh"><code>ssh</code></h2>
+<p>Log onto remote systems and get a shell or run commands</p>
+{% highlight text %}
+$ ssh hacker@dojo.pwn.college -p 22
+Connected!
+hacker@reverse-engineering~the-patch-directive:~$ id
+uid=1000(hacker) gid=1000(hacker) groups=1000(hacker)
+{% endhighlight %}
+{% highlight text %}
+$ ssh hacker@dojo.pwn.college -p 22 id
+uid=1000(hacker) gid=1000(hacker) groups=1000(hacker)
+{% endhighlight %}
+<p><strong>NOTE</strong>: <code>sftp</code> can be used to transfer
+files</p>
+<h2 id="nc"><code>nc</code></h2>
+<p>Do TCP or UDP connections or listens</p>
+{% highlight text %}
+$ nc 127.0.0.1 31337
+Hello hacker
+{% endhighlight %}
+<h1 id="exercises">Exercises</h1>
+<ul>
+<li><p>Super SSH <a href="https://play.picoctf.org/practice/challenge/424">https://play.picoctf.org/practice/challenge/424</a></p></li>
+<li><p>what's a net cat? <a href="https://play.picoctf.org/practice/challenge/34">https://play.picoctf.org/practice/challenge/34</a></p></li>
+<li><p>Wave a flag <a href="https://play.picoctf.org/practice/challenge/170">https://play.picoctf.org/practice/challenge/170</a></p></li>
+<li><p>Obedient Cat <a href="https://play.picoctf.org/practice/challenge/147">https://play.picoctf.org/practice/challenge/147</a></p></li>
+<li><p>Binary search <a href="https://play.picoctf.org/practice/challenge/442">https://play.picoctf.org/practice/challenge/442</a></p></li>
+<li><p>Magikarp Ground Mission <a href="https://play.picoctf.org/practice/challenge/189">https://play.picoctf.org/practice/challenge/189</a></p></li>
+</ul>
+<h1 id="redirection">Redirection</h1>
+<p>Commands print their output to the terminal (STDOUT, STDERR), the
+output can be redirected to a file or to the input of other commands
+(STDIN).</p>
+<h2 id="to-files">To files</h2>
+<p><code>COMMAND &gt;FILE</code></p>
+{% highlight text %}
+$ echo 'Hello, world!' >hello.txt
+
+$ cat hello.txt
+Hello, world!
+{% endhighlight %}
+<h2 id="to-other-commands">To other commands</h2>
+<p><code>COMMAND1 | COMMAND2</code></p>
+{% highlight text %}
+$ echo 'Hello, world!' | rev
+!dlrow ,olleH
+{% endhighlight %}
+<p><strong>NOTE</strong>: <code>rev</code> reverses the text line per
+line.</p>
+<h1 id="getting-help">Getting help</h1>
+<p>Programs are usually documented in many places.</p>
+<p>You can STFW (search the friendly web), RTFM (read the fine manual)
+or RTFS (read the fabulous source).</p>
+<h2 id="offline-alternatives">Offline alternatives</h2>
+<p><code>--help</code></p>
+{% highlight text %}
+$ cat --help
+{% endhighlight %}
+<p>Usually a summarized version</p>
+<p><code>man</code></p>
+{% highlight text %}
+$ man cat
+CAT(1)                                                          User Commands                                                         CAT(1)
+
+NAME
+       cat - concatenate files and print on the standard output
+
+SYNOPSIS
+       cat [OPTION]... [FILE]...
+
+DESCRIPTION
+       Concatenate FILE(s) to standard output.
+
+       With no FILE, or when FILE is -, read standard input.
+
+       -A, --show-all
+              equivalent to -vET
+{% endhighlight %}
+<p>More complete</p>
+<p><code>info</code></p>
+{% highlight text %}
+$ info cat
+File: coreutils.info,  Node: cat invocation,  Next: tac invocation,  Up: Output of entire files
+
+3.1 ‘cat’: Concatenate and write files
+======================================
+
+‘cat’ copies each FILE (‘-’ means standard input), or standard input if
+none are given, to standard output.  Synopsis:
+
+     cat [OPTION] [FILE]...
+
+   The program accepts the following options.  Also see *note Common
+options::.
+
+‘-A’
+‘--show-all’
+     Equivalent to ‘-vET’.
+{% endhighlight %}
+<p>Sometimes even more complete, especially for GNU programs</p>
+<p><code>tldr</code> Shows some common variations of commands</p>
+{% highlight text %}
+$ tldr cat
+
+  cat
+
+  Print and concatenate files.
+  More information: https://www.gnu.org/software/coreutils/manual/html_node/cat-invocation.html.
+
+  - Print the contents of a file to `stdout`:
+    cat path/to/file
+
+  - Concatenate several files into an output file:
+    cat path/to/file1 path/to/file2 ... > path/to/output_file
+
+  - Append several files to an output file:
+    cat path/to/file1 path/to/file2 ... >> path/to/output_file
+
+...
+{% endhighlight %}
+<p>Available online at <a href="https://tldr.inbrowser.app/">https://tldr.inbrowser.app/</a></p>
+<h2 id="online-resources">Online resources</h2>
+<ul>
+<li><a href="https://linux.die.net/man/">https://linux.die.net/man/</a></li>
+<li><a href="https://man7.org/linux/man-pages/index.html">https://man7.org/linux/man-pages/index.html</a></li>
+</ul>
+<ul>
+<li><a href="https://explainshell.com">https://explainshell.com</a></li>
+</ul>
+<img src="/ctf-bootcamp/Session0/img/explainshell.png"/>
+<h1 id="more-commands">More commands</h1>
+<h2 id="file"><code>file</code></h2>
+<p>Determine file type</p>
+<p><code>file FILE</code></p>
+{% highlight text %}
+$ file hello.c
+hello.c: C source, ASCII text
+
+$ file hello.out
+hello.out: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically
+linked, interpreter
+/nix/store/zdpby3l6azi78sl83cpad2qjpfj25aqx-glibc-2.40-66/lib/ld-linux-x86-64.so.2, for GNU/Linux 3.10.0, not stripped
+{% endhighlight %}
+<h2 id="find"><code>find</code></h2>
+<p>Find files in a directory</p>
+<p><code>find PATH -name NAME</code></p>
+{% highlight text %}
+$ find . -name secret.txt
+./some/arbitrarily/nested/path/secret.txt
+{% endhighlight %}
+<p><strong>Note</strong>: Many, many useful options, check
+<code>tldr</code></p>
+<h2 id="grep"><code>grep</code></h2>
+<p>Find patterns in files</p>
+<p><code>grep PATTERN FILE</code></p>
+{% highlight text %}
+$ grep -i "flag" dump.txt
+flag{secret_value}
+
+$ cat dump.txt | grep -i "flag"
+flag{secret_value}
+{% endhighlight %}
+<p><strong>NOTE</strong>: Check regular expressions and
+<code>grep -P</code></p>
+<p><strong>NOTE</strong>: quite a lot of commands that take a FILE
+argument can also read from STDIN.</p>
+<h2 id="strings"><code>strings</code></h2>
+<p>Print the sequences of printable characters in files</p>
+<p><code>strings FILE</code></p>
+{% highlight text %}
+$ strings hello.out
+/nix/store/zdpby3l6azi78sl83cpad2qjpfj25aqx-glibc-2.40-66/lib/ld-linux-x86-64.so.2
+__printf_chk
+__libc_start_main
+libc.so.6
+GLIBC_2.3.4
+GLIBC_2.34
+/nix/store/2651x1rpsl18jlwg5a38vrpv5n0yfv0g-shell/lib:/nix/store/zdpby3l6azi78sl83cpad2qjpfj25aqx-glibc-2.40-66/lib:/nix/store/bmi5znnqk4kg2grkrhk6py0irc8phf6l-gcc-14.2.1.20250322-lib/lib
+__gmon_start__
+PTE1
+Hello, world!
+…
+{% endhighlight %}
+<h2 id="base64"><code>base64</code></h2>
+<p>Encode or decode FILE to/from base64</p>
+<p><code>base64 FILE</code> <code>base64 -d FILE</code></p>
+{% highlight text %}
+$ echo 'Hello, world' | base64
+SGVsbG8sIHdvcmxkCg==
+
+$ echo 'SGVsbG8sIHdvcmxkCg==' | base64 -d
+Hello, world
+{% endhighlight %}
+<h2 id="xxd"><code>xxd</code></h2>
+<p>Make a hexdump or reverse it</p>
+{% highlight text %}
+$ echo 'Hello, world' | xxd
+00000000: 4865 6c6c 6f2c 2077 6f72 6c64 0a         Hello, world.
+
+$ echo 'Hello, world' | xxd | xxd -r
+Hello, world
+{% endhighlight %}
+<h2 id="nano"><code>nano</code></h2>
+<p>Edit text files in terminal</p>
+<p><code>nano FILE</code></p>
+<p><code>CTRL-x</code> exits</p>
+<h2 id="sudo"><code>sudo</code></h2>
+<p>Soon™</p>
+<h1 id="exercises-1">Exercises</h1>
+<ul>
+<li><p>First Grep <a href="https://play.picoctf.org/practice/challenge/85">https://play.picoctf.org/practice/challenge/85</a></p></li>
+<li><p>First Find <a href="https://play.picoctf.org/practice/challenge/320">https://play.picoctf.org/practice/challenge/320</a></p></li>
+<li><p>Big Zip <a href="https://play.picoctf.org/practice/challenge/322">https://play.picoctf.org/practice/challenge/322</a></p></li>
+<li><p>Static ain't always noise <a href="https://play.picoctf.org/practice/challenge/163">https://play.picoctf.org/practice/challenge/163</a></p></li>
+<li><p>strings it <a href="https://play.picoctf.org/practice/challenge/37">https://play.picoctf.org/practice/challenge/37</a></p></li>
+<li><p>plumbing <a href="https://play.picoctf.org/practice/challenge/48">https://play.picoctf.org/practice/challenge/48</a></p></li>
+</ul>
+<h1 id="integer-numbers">Integer Numbers</h1>
+<h2 id="binary">Binary</h2>
+<p>Computers only work on bits (0 or 1), any value we may wish to
+operate on must be represented by a sequence of 0s and 1s.</p>
+<p>How may we represent numbers?</p>
+<p>We use binary representation:</p>
+<script type="math/tex; mode=display">
+\begin{align*}
+0_{10} &= 0_{2}     \\
+1_{10} &= 1_{2}     \\
+2_{10} &= 10_{2}    \\
+3_{10} &= 11_{2}    \\
+4_{10} &= 100_{2}   \\
+5_{10} &= 101_{2}   \\
+6_{10} &= 110_{2}   \\
+7_{10} &= 111_{2}   \\
+8_{10} &= 1000_{2}  \\
+9_{10} &= 1001_{2}  \\
+10_{10} &= 1010_{2} \\
+\end{align*}
+</script>
+<p>This means that any number we may want to operate on will be
+represented by sums of power of two. The computer carries normal
+arithmetic operations on them.</p>
+<h2 id="hex-representation">Hex representation</h2>
+<p>Handling binary literals in code is a handful, we need one character
+for each digit and <span class="math inline">1 + log<sub>2</sub><em>n</em></span> digits
+total.</p>
+<p>Representing a C int (32 bits) would look like:</p>
+{% highlight text %}
+10111000000001101100001100100001
+{% endhighlight %}
+<p>We can use hex digits to make the representation more concise.</p>
+<p>Each hex digit represents 4 bits (called a nibble), half a byte.</p>
+<p>We count from 0 to 9 and then use A to F for the following digits (10
+to 15).</p>
+<table>
+<thead>
+<tr>
+<th>Binary</th>
+<th>Hex</th>
+<th>Decimal</th>
+<th>Binary</th>
+<th>Hex</th>
+<th>Decimal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0b0000</td>
+<td>0x0</td>
+<td>0</td>
+<td>0b1000</td>
+<td>0x8</td>
+<td>8</td>
+</tr>
+<tr>
+<td>0b0001</td>
+<td>0x1</td>
+<td>1</td>
+<td>0b1001</td>
+<td>0x9</td>
+<td>9</td>
+</tr>
+<tr>
+<td>0b0010</td>
+<td>0x2</td>
+<td>2</td>
+<td>0b1010</td>
+<td>0xA</td>
+<td>10</td>
+</tr>
+<tr>
+<td>0b0011</td>
+<td>0x3</td>
+<td>3</td>
+<td>0b1011</td>
+<td>0xB</td>
+<td>11</td>
+</tr>
+<tr>
+<td>0b0100</td>
+<td>0x4</td>
+<td>4</td>
+<td>0b1100</td>
+<td>0xC</td>
+<td>12</td>
+</tr>
+<tr>
+<td>0b0101</td>
+<td>0x5</td>
+<td>5</td>
+<td>0b1101</td>
+<td>0xD</td>
+<td>13</td>
+</tr>
+<tr>
+<td>0b0110</td>
+<td>0x6</td>
+<td>6</td>
+<td>0b1110</td>
+<td>0xE</td>
+<td>14</td>
+</tr>
+<tr>
+<td>0b0111</td>
+<td>0x7</td>
+<td>7</td>
+<td>0b1111</td>
+<td>0xF</td>
+<td>15</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Note</strong>: For notation purposes, we prefix binary
+literals by <code>0b</code> and hex literals by <code>0x</code></p>
+<p><strong>Note</strong>: Two hex digits make a byte</p>
+<h2 id="python-example-1">Python example</h2>
+<p>All previous notations can be used to represent numbers in many
+programming languages.</p>
+{% highlight python %}
+i1 = 10
+i2 = 0b10
+i3 = 0x10
+
+(i1, i2, i3)
+# (10, 2, 16)
+{% endhighlight %}
+<p>If we are converting from string we can specify base:</p>
+{% highlight python %}
+int('0b1010', 2)  # 10
+int('0xA', 16)  # 10
+{% endhighlight %}
+<p><strong>Note</strong>: The prefix may be skipped here</p>
+<p>We can also convert to some representation</p>
+{% highlight python %}
+bin(10)  # '0b1010'
+hex(10)  # '0xa'
+{% endhighlight %}
+<h2 id="twos-complement">Two's complement</h2>
+<p>We also want to represent negative numbers, for implementation
+reasons signed numbers (numbers that may be positive or integer) are
+represented in two's complement format.</p>
+<p>The representation of a given <span class="math inline">−<em>i</em></span> using <span class="math inline"><em>N</em></span> bits is the representation of
+unsigned <span class="math inline">2<sup><em>N</em></sup> − <em>i</em></span>.</p>
+<h3 id="example-2">Example</h3>
+<p>To represent <span class="math inline">−7</span> using <span class="math inline">8</span> bits:</p>
+<p><span class="math display">2<sup>8</sup> − 7 = 256 − 7 = 249 = 0b11111001</span></p>
+<p>So -7 using 8 bits is <code class="verbatim">0b11111001</code>.</p>
+<p><strong>Note</strong>: We need to define an integer size (in bits) to
+determine the binary representation.</p>
+<h3 id="shortcut">Shortcut</h3>
+<p>An easier way to compute the two's complement is to invert all bits
+in the binary representation and add 1 to the result.</p>
+<p>So, to compute the two's complement 8-bit representation of -7, we
+use the representation of 7 = <span class="math inline">0<em>b</em>00000111</span>.</p>
+<p>Negate: not 0b00000111 = 0b11111000</p>
+<p>Add 1: 0b11111000 + 1 = 0b11111001</p>
+<p>Same result as before.</p>
+<h3 id="first-bit-is-almost-sign">First bit is (almost) sign</h3>
+<p>The first bit in a signed two's complement integer indicates the
+sign, all negative numbers have first bit 1 while all positive numbers
+(and zero) have 0.</p>
+<p>Using 8 bits:</p>
+<p>0 = 0b00000000 = 0x00</p>
+<p>1 = 0b00000001 = 0x01</p>
+<p>127 = 0b01111111 = 0x7F</p>
+<p>-1 = 0b11111111 = 0xFF</p>
+<p>-128 = 0b10000000 = 0x80</p>
+<h1 id="endianness">Endianness</h1>
+<p>x86-64 has memory addressable memory, we then have a choice of how
+store multi-byte values in memory.</p>
+<p>If we want to store a C <code>int</code> (4 bytes)
+<code>0xAABBCCDD</code> (<span class="math inline">2864434397<sub>10</sub></span>) into 4 bytes of
+memory at <code>ptr[0]</code>, <code>ptr[1]</code>, <code>ptr[2]</code>,
+<code>ptr[3]</code>, we could do:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>ptr[0]</th>
+<th>ptr[1]</th>
+<th>ptr[2]</th>
+<th>ptr[3]</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Little-endian</td>
+<td>0xDD</td>
+<td>0xCC</td>
+<td>0xBB</td>
+<td>0xAA</td>
+</tr>
+<tr>
+<td>Big-endian</td>
+<td>0xAA</td>
+<td>0xBB</td>
+<td>0xCC</td>
+<td>0xDD</td>
+</tr>
+</tbody>
+</table>
+<p>That is, little-endian stores the last (least significant) byte first
+in memory, while big-endian stores the first (most significant) byte
+first.</p>
+<p>Despite big-endian seeming more reasonable, x86-64 use
+little-endian</p>
+<h2 id="demo">Demo</h2>
+<p>Using cling (C++ interpreter)</p>
+{% highlight text %}
+[cling]$ #include <stdint.h>
+[cling]$ uint8_t arr[4];
+[cling]$ arr
+(uint8_t [4]) { '0x00', '0x00', '0x00', '0x00' }
+[cling]$ int* int_p = (int*) arr;
+[cling]$ *int_p = 0xAABBCCDD
+(int) -1430532899
+[cling]$ arr
+(uint8_t [4]) { '0xdd', '0xcc', '0xbb', '0xaa' }
+[cling]$ *int_p = 255
+(int) 255
+[cling]$ arr
+(uint8_t [4]) { '0xff', '0x00', '0x00', '0x00' }
+{% endhighlight %}
+<h1 id="exercises-2">Exercises</h1>
+<ul>
+<li><p>binhexa <a href="https://play.picoctf.org/practice/challenge/404">https://play.picoctf.org/practice/challenge/404</a></p></li>
+<li><p>endianness <a href="https://play.picoctf.org/practice/challenge/414">https://play.picoctf.org/practice/challenge/414</a></p></li>
+</ul>
+<h1 id="data-encodings">Data encodings</h1>
+<p>We may also wish to represent characters. As we only have bits to
+work with, we must associate (that is, encode) bit patterns to some
+characters.</p>
+<h2 id="ascii">ASCII</h2>
+<p>ASCII (American Standard Code for Information Interchange) is the
+oldest standard character encoding (1960s).</p>
+<p>It uses 7 bits to map letters (<code>a-zA-Z</code>), digits
+(<code>0-9</code>), symbols (<code>e.g., @#$%^&amp;</code>), space
+(<code>' '</code>) and control characters (e.g., LF: new line, HT:
+horizontal tab).</p>
+<p>Notably:</p>
+<div class="line-block">0x0A: '' - line feed, newline<br/>
+0x20: ' ' - space<br/>
+0x30-0x39: 0, 1, 2, …, 9<br/>
+0x41-0x5A: A, B, C, …, Z<br/>
+0x61-0x7A: a, b, c, …, z</div>
+<p>Full table: <code>man ascii</code></p>
+<h3 id="table">Table</h3>
+<img src="/ctf-bootcamp/Session0/img/ascii_code_chart.svg"/>
+<h3 id="not-all-byte-values-are-ascii-decodable">Not all byte values are
+ASCII decodable</h3>
+<p>ASCII uses only 7 bits, so bytes in the range 0x80-0xFF can not be
+interpreted as ASCII.</p>
+{% highlight text %}
+In [1]: b'\x80'.decode('ascii')
+---------------------------------------------------------------------------
+UnicodeDecodeError                        Traceback (most recent call last)
+Cell In[1], line 1
+----> 1 b'\x80'.decode('ascii')
+
+UnicodeDecodeError: 'ascii' codec can't decode byte 0x80 in position 0:
+ordinal not in range(128)
+{% endhighlight %}
+<p><code>Note</code>: There are some ASCII extensions that use 8 bits
+instead, but none standard</p>
+<h3 id="strings-in-c">Strings in C</h3>
+<p>In low level languages (C, ASM), <em>strings</em> are just a sequence
+of encoded characters in memory.</p>
+<p>The string <code class="verbatim">Hello</code> would look like
+<code>0x48656c6c6f</code>. To indicate where the string ends, a special
+terminator byte (0x00: NUL) is used. So <code class="verbatim">Hello</code> would really be stored like
+0x48656c6c6f00.</p>
+<p><strong>Note</strong>: Other means of indicating string lengths are
+used by other languages</p>
+<h2 id="utf-8">UTF-8</h2>
+<p>ASCII can only encode 128 characters (7 bits), not enough for modern
+times.</p>
+<p>Can support all characters in Unicode (Chinese, Arabic, emojis,
+etc.).</p>
+<p>Backward compatible with ASCII, that is, all ASCII encodings
+represent the same characters in UTF-8.</p>
+<p>Variable-length:</p>
+<ul>
+<li>1 byte for ASCII (A = 0x41)</li>
+<li>2–4 bytes for other characters (<code>✓</code> = 0xE29C93)</li>
+</ul>
+<h3 id="neither-are-all-byte-sequences-utf-8-decodable">Neither are all
+byte sequences UTF-8 decodable</h3>
+<p>Same as ASCII, a single byte in range 0x80–0xFF is not valid
+UTF-8.</p>
+{% highlight text %}
+In [8]: b'\x80'.decode()
+---------------------------------------------------------------------------
+UnicodeDecodeError                        Traceback (most recent call last)
+Cell In[8], line 1
+----> 1 b'\x80'.decode()
+
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0x80 in position 0:
+invalid start byte
+{% endhighlight %}
+<p>There are some other multi-byte sequences that are not valid.</p>
+<h2 id="encoding-gives-meaning">Encoding gives meaning</h2>
+<p>Bytes are just bytes, knowing what they are representing (i.e., the
+encoding used) allows us to interpret them.</p>
+{% highlight text %}
+In [1]: s = '😤🔥🚩'
+
+In [2]: s.encode()
+Out[2]: b'\xf0\x9f\x98\xa4\xf0\x9f\x94\xa5\xf0\x9f\x9a\xa9'
+
+In [3]: bytes_to_long(s.encode())
+Out[3]: 74469342404751707337991887529
+{% endhighlight %}
+<h2 id="base64-1">Base64</h2>
+<p>We may want to represent binary data with ASCII</p>
+<p>We could use hex encoding for this:</p>
+{% highlight text %}
+$ echo 'Hello, world' | xxd -ps
+48656c6c6f2c20776f726c640a
+{% endhighlight %}
+<p>But this doubles the bytes that we must transfer, each byte is now
+represented by two ASCII characters (two bytes).</p>
+<p>Base64 is an alternative encoding that gives more compact
+representation. It uses characters <code class="verbatim">A–Za–z0–9+/</code> to represent bit strings <code class="verbatim">0b000000</code> to <code class="verbatim">0b111111</code> (in that order).</p>
+<p>Each Base64 character encodes 6 bits of data. Every 4 characters of
+Base64 encode 3 bytes of data.</p>
+<p>As data may not be multiple of 6 bits, padding characters
+<strong>=</strong> are appended to indicate how many extra 2-bits were
+in the base64 encoding that do not correspond to encoded data.</p>
+{% highlight text %}
+$ printf A | base64
+QQ==
+
+$ printf AA | base64
+QUE=
+
+$ printf AAA | base64
+QUFB
+
+$ printf AAAA | base64
+QUFBQQ==
+{% endhighlight %}
+<p>Remember: <code>base64</code> (command) encodes/decodes to/from
+base64</p>
+<h2 id="other-bases">Other bases</h2>
+<p>There are other similar encodings (base32, base58, base85) but base64
+is by far the most popular.</p>
+<h1 id="exercises-3">Exercises</h1>
+<ul>
+<li><p>Bases <a href="https://play.picoctf.org/practice/challenge/67">https://play.picoctf.org/practice/challenge/67</a></p></li>
+<li><p>repetitions <a href="https://play.picoctf.org/practice/challenge/371">https://play.picoctf.org/practice/challenge/371</a></p></li>
+<li><p>Nice netcat… <a href="https://play.picoctf.org/practice/challenge/156">https://play.picoctf.org/practice/challenge/156</a></p></li>
+<li><p>ASCII Numbers <a href="https://play.picoctf.org/practice/challenge/390">https://play.picoctf.org/practice/challenge/390</a></p></li>
+</ul>
+<h1 id="further-learning">Further learning</h1>
+<ul>
+<li><a href="https://pwn.college/">https://pwn.college/</a></li>
+<li><a href="https://pwn.college/linux-luminarium/">https://pwn.college/linux-luminarium/</a></li>
+<li><a href="https://pwn.college/fundamentals/program-misuse/">https://pwn.college/fundamentals/program-misuse/</a></li>
+<li><a href="https://overthewire.org/wargames/bandit/">https://overthewire.org/wargames/bandit/</a></li>
+</ul>

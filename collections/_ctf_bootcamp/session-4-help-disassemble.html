@@ -1,0 +1,179 @@
+---
+layout: post
+title: "CTF Bootcamp S4: help disassemble"
+author: "GGG"
+date: 2026-04-06
+excerpt: "CTF Bootcamp S4: help disassemble. This article adapts the bootcamp session notes into a readable post. View the slides at /ctf-bootcamp/Session4/."
+comment: true
+---
+
+<p>This article adapts the bootcamp session notes into a readable post. <a href="/ctf-bootcamp/Session4/">View the slides</a>.</p>
+<h1 id="today">Today</h1>
+<ul>
+<li>Static analysis</li>
+<li>Dynamic analysis</li>
+<li>Exercises</li>
+</ul>
+<h1 id="tools">Tools</h1>
+<p>Install please:</p>
+<ul>
+<li>Editor of choice (e.g., VS Code, VIM, Emacs)</li>
+<li>cfr</li>
+<li>java</li>
+<li>python</li>
+<li>ipython</li>
+<li>Ghidra</li>
+</ul>
+<h1 id="reverse-engineering">Reverse engineering</h1>
+<p>Reverse engineering is the process of understanding the behaviour of
+a system based on an analysis of its source code or source code
+artifacts (compilation output).</p>
+<p>Normally we <em>forward engineer</em> a program from a specification,
+in reverse engineering we try to infer the specification from the
+program.</p>
+<h1 id="general-workflow">General workflow</h1>
+<ol>
+<li>Identify entry point (main)</li>
+<li>Find user inputs</li>
+<li>Identify flow of data (specially input)</li>
+<li>Understand (and <strong>reverse</strong>) transformations</li>
+<li>Reconstruct valid input (gets us the flag)</li>
+</ol>
+<h1 id="static-analysis">Static analysis</h1>
+<ul>
+<li>Analyze the program without running it (statically)</li>
+<li>We might have the source code of the program, or just the
+compilation artifacts
+<ul>
+<li>If only the compilation artifacts are present our job is harder</li>
+<li>We might be able to get some possible source code from the artifacts
+(decompilation)</li>
+</ul></li>
+</ul>
+<h2 id="compiled-forms">Compiled forms</h2>
+<ul>
+<li>Java class</li>
+<li>Python Bytecode</li>
+<li>x86-64</li>
+</ul>
+<h1 id="dynamic-analysis">Dynamic analysis</h1>
+<ul>
+<li>We run the program and observe its behaviour</li>
+<li>We can insert debugging statements and other instrumentation</li>
+<li>We might also control some parts of the program execution using
+debugging tools</li>
+</ul>
+<h1 id="section"></h1>
+<p>Static and dynamic analysis are complementary</p>
+<p>Static analysis gives us a first idea of what the program might be
+doing</p>
+<p>Dynamic analysis allows us to test our hypothesis</p>
+<h1 id="tools-1">Tools</h1>
+<h2 id="python">Python</h2>
+<h3 id="print"><code>print</code></h3>
+<p>Good ol' print</p>
+<h3 id="prettyprint">prettyprint</h3>
+{% highlight text %}
+from pprint import pprint
+{% endhighlight %}
+<p>A prettier <code>print</code></p>
+<h3 id="breakpoint"><code>breakpoint()</code></h3>
+<p>Pauses execution and opens the Python debugger</p>
+<p><code>help</code> for help</p>
+<h3 id="ipython"><code>ipython</code></h3>
+<p>A better, interactive Python shell</p>
+<p>Useful for testing how snippets of code behave</p>
+<h2 id="java">Java</h2>
+<h3 id="system.out.println"><code>System.out.println</code></h3>
+<p>Java's print with trailing line</p>
+<h2 id="x86-64">x86-64</h2>
+<h3 id="ghidra">Ghidra</h3>
+<p>Reverse engineering tool that analyzes compiled binaries</p>
+<p>Decompiles machine code into feasible C code (C code that would
+result in similar machine code)</p>
+<ol>
+<li><p>Basic usage</p>
+<ul>
+<li>The decompiler output is not the most readable C code</li>
+<li>It's our job to make it make sense</li>
+<li>To do so, we can:
+<ul>
+<li>Rename variables and functions (right click -&gt; rename)</li>
+<li>Change the types of variables and functions (right click -&gt;
+change type)</li>
+<li>Add comments (right click -&gt; add comment) to explain our inferred
+logic</li>
+</ul></li>
+</ul></li>
+</ol>
+<h3 id="gdb">GDB</h3>
+<p>GNU Debugger</p>
+<p>Allows us to run and debug C (and other language) compiled
+programs</p>
+<p>As most of our programs will be compiled without debugging
+information (source code information), we will need to understand x86-64
+assembly to be able to use GDB</p>
+<h1 id="language-documentation">Language Documentation</h1>
+<ul>
+<li><a href="https://docs.python.org/3/">https://docs.python.org/3/</a>
+(Python)</li>
+<li><a href="https://docs.oracle.com/en/java/javase/25/docs/api/index.html">https://docs.oracle.com/en/java/javase/25/docs/api/index.html</a>
+(Java)</li>
+<li><a href="https://en.cppreference.com/w/c/">https://en.cppreference.com/w/c/</a>
+(C)</li>
+<li><a href="https://devdocs.io/">https://devdocs.io/</a> (Many
+languages and other technologies)</li>
+</ul>
+<p>You should also search for the documentation of any used
+libraries.</p>
+<h1 id="exercises---java">Exercises - Java</h1>
+<ul>
+<li><p>vault-door-training <a href="https://play.picoctf.org/practice/challenge/7">https://play.picoctf.org/practice/challenge/7</a></p></li>
+<li><p>Safe Opener <a href="https://play.picoctf.org/practice/challenge/294">https://play.picoctf.org/practice/challenge/294</a></p></li>
+<li><p>Safe Opener 2 <a href="https://play.picoctf.org/practice/challenge/375">https://play.picoctf.org/practice/challenge/375</a></p></li>
+<li><p>Fresh Java <a href="https://play.picoctf.org/practice/challenge/271">https://play.picoctf.org/practice/challenge/271</a></p></li>
+<li><p>vault-door-1 <a href="https://play.picoctf.org/practice/challenge/12">https://play.picoctf.org/practice/challenge/12</a></p></li>
+<li><p>vault-door-3 <a href="https://play.picoctf.org/practice/challenge/60">https://play.picoctf.org/practice/challenge/60</a></p></li>
+<li><p>vault-door-4 <a href="https://play.picoctf.org/practice/challenge/71">https://play.picoctf.org/practice/challenge/71</a></p></li>
+<li><p>vault-door-5 <a href="https://play.picoctf.org/practice/challenge/77">https://play.picoctf.org/practice/challenge/77</a></p></li>
+<li><p>vault-door-6 <a href="https://play.picoctf.org/practice/challenge/45">https://play.picoctf.org/practice/challenge/45</a></p></li>
+</ul>
+<h1 id="exercises---python">Exercises - Python</h1>
+<ul>
+<li><p>Flag Hunters <a href="https://play.picoctf.org/practice/challenge/472">https://play.picoctf.org/practice/challenge/472</a></p></li>
+<li><p>Transformation <a href="https://play.picoctf.org/practice/challenge/104">https://play.picoctf.org/practice/challenge/104</a></p></li>
+<li><p>Tap into Hash <a href="https://play.picoctf.org/practice/challenge/466">https://play.picoctf.org/practice/challenge/466</a></p></li>
+<li><p>Quantum Scrambler <a href="https://play.picoctf.org/practice/challenge/479">https://play.picoctf.org/practice/challenge/479</a></p></li>
+<li><p>unpackme.py <a href="https://play.picoctf.org/practice/challenge/314">https://play.picoctf.org/practice/challenge/314</a></p></li>
+<li><p>patchme.py <a href="https://play.picoctf.org/practice/challenge/287">https://play.picoctf.org/practice/challenge/287</a></p></li>
+<li><p>bloat.py <a href="https://play.picoctf.org/practice/challenge/256">https://play.picoctf.org/practice/challenge/256</a></p></li>
+<li><p>crackme-py <a href="https://play.picoctf.org/practice/challenge/175">https://play.picoctf.org/practice/challenge/175</a></p></li>
+<li><p>Chronohack <a href="https://play.picoctf.org/practice/challenge/468">https://play.picoctf.org/practice/challenge/468</a></p></li>
+<li><p>Picker I <a href="https://play.picoctf.org/practice/challenge/400">https://play.picoctf.org/practice/challenge/400</a></p></li>
+<li><p>Picker II <a href="https://play.picoctf.org/practice/challenge/401">https://play.picoctf.org/practice/challenge/401</a></p></li>
+<li><p>Picker III <a href="https://play.picoctf.org/practice/challenge/402">https://play.picoctf.org/practice/challenge/402</a></p></li>
+<li><p>keygenme-py <a href="https://play.picoctf.org/practice/challenge/121">https://play.picoctf.org/practice/challenge/121</a></p></li>
+<li><p>weirdSnake <a href="https://play.picoctf.org/practice/challenge/428">https://play.picoctf.org/practice/challenge/428</a></p></li>
+</ul>
+<h1 id="exercises---x86-64">Exercises - x86-64</h1>
+<ul>
+<li><p>file-run1 <a href="https://play.picoctf.org/practice/challenge/266">https://play.picoctf.org/practice/challenge/266</a></p></li>
+<li><p>file-run2 <a href="https://play.picoctf.org/practice/challenge/267">https://play.picoctf.org/practice/challenge/267</a></p></li>
+<li><p>ASCII FTW <a href="https://play.picoctf.org/practice/challenge/389">https://play.picoctf.org/practice/challenge/389</a></p></li>
+<li><p>packer pack <a href="https://play.picoctf.org/practice/challenge/421">https://play.picoctf.org/practice/challenge/421</a></p></li>
+<li><p>FactCheck <a href="https://play.picoctf.org/practice/challenge/416">https://play.picoctf.org/practice/challenge/416</a></p></li>
+<li><p>Shop <a href="https://play.picoctf.org/practice/challenge/134">https://play.picoctf.org/practice/challenge/134</a></p></li>
+<li><p>Bbbbloat <a href="https://play.picoctf.org/practice/challenge/255">https://play.picoctf.org/practice/challenge/255</a></p></li>
+<li><p>Reverse <a href="https://play.picoctf.org/practice/challenge/372">https://play.picoctf.org/practice/challenge/372</a></p></li>
+<li><p>perplexed <a href="https://play.picoctf.org/practice/challenge/458">https://play.picoctf.org/practice/challenge/458</a></p></li>
+<li><p>Classic Crackme 0x100 <a href="https://play.picoctf.org/practice/challenge/409">https://play.picoctf.org/practice/challenge/409</a></p></li>
+</ul>
+<h1 id="further-learning">Further learning</h1>
+<p>For learning x86-64</p>
+<ul>
+<li>pwn.college — Learn to Hack! <a href="https://pwn.college/">https://pwn.college/</a></li>
+</ul>
+<h1 id="hack-time">Hack time!</h1>
+<ul>
+<li><a href="https://play.picoctf.org/practice">https://play.picoctf.org/practice</a></li>
+</ul>
