@@ -1,0 +1,295 @@
+---
+layout: post
+title: "CTF Bootcamp S2: A series of tubes"
+author: "GGG"
+date: 2026-04-06
+excerpt: "CTF Bootcamp S2: A series of tubes"
+comment: true
+---
+
+<p>This article adapts the bootcamp session notes into a readable post. <a href="/ctf-bootcamp/Session2/">View the slides</a>.</p>
+<h1 id="today">Today</h1>
+<ul>
+<li>OSI model</li>
+<li>TCP/IP model</li>
+<li>Network protocols
+<ul>
+<li>IP</li>
+<li>TCP</li>
+<li>UDP</li>
+<li>FTP</li>
+<li>HTTP</li>
+</ul></li>
+<li>Hack time!</li>
+</ul>
+<h1 id="tools">Tools</h1>
+<p>Install please:</p>
+<ul>
+<li>Wireshark</li>
+</ul>
+<h1 id="networking">Networking</h1>
+<p>So, we need to send packets through the wire.</p>
+<p>We use <em>protocols</em> for that.</p>
+<p>We must define protocol mechanisms and message format.</p>
+<p>Each protocol will provide different functions.</p>
+<h1 id="osi-model">OSI model</h1>
+<p>Reference model for communication system components.</p>
+<img src="/ctf-bootcamp/Session2/img/osi-model-table.png"/>
+<p>Is not actually implemented, that is, it's a conceptual separation of
+networking responsibilities for protocols.</p>
+<p>Mostly used for talking about networks between informaticians.</p>
+<h1 id="internet-protocol-suite-aka-tcpip">Internet protocol suite (aka
+TCP/IP)</h1>
+<p>Set of protocols used in the Internet (and LANs and so)</p>
+<img src="/ctf-bootcamp/Session2/img/tcp_ip-layers.png"/>
+<h2 id="encapsulation">Encapsulation</h2>
+<img src="/ctf-bootcamp/Session2/img/tcp_ip-encapsulation.png"/>
+<p>The message of each protocol is <em>encapsulated</em>, that is used
+as the payload of a lower protocol level.</p>
+<p>The header and footer of the encapsulating protocol are concatenated
+to the bytes of the higher protocol.</p>
+<h1 id="communication-protocols">Communication protocols</h1>
+<p>Define rules for two systems to transmit information between
+them.</p>
+<p>Consists of syntax and semantics (like programming language).</p>
+<p>The syntax defines the composition of the bytes that will be
+sent.</p>
+<p>The semantics define what the bytes represent.</p>
+<h1 id="ethernet">Ethernet</h1>
+<h2 id="mac-address">MAC address</h2>
+<p>48-bit identifier assigned to network interface controllers
+(NIC)—devices in computers that connect to a network—to use as an
+address in network communications.</p>
+<p>They differentiate devices from one another in the same network.</p>
+<h3 id="representation">Representation</h3>
+<p>Three common representations:</p>
+<p>Six groups of two hexadecimal digits, separated by hyphens (-) in
+transmission order</p>
+<p><code>01-23-45-67-89-AB</code></p>
+<p>Six groups of two hexadecimal digits separated by colons (:)</p>
+<p><code>01:23:45:67:89:AB</code></p>
+<p>Three groups of four hexadecimal digits separated by dots (.)</p>
+<p><code>0123.4567.89AB</code></p>
+<h2 id="frame">Frame</h2>
+<img src="/ctf-bootcamp/Session2/img/ethernet_frame.png"/>
+<p>Preamble and SFD are used for synchronization.</p>
+<p>MAC destination indicates the MAC of the destination device.</p>
+<p>MAC source indicates the MAC of the source device.</p>
+<h2 id="ethernet-switching">Ethernet switching</h2>
+<img src="/ctf-bootcamp/Session2/img/ethernet_switch.png"/>
+<p>Computers create the Ethernet frame, send it through their NIC, and
+off they go.</p>
+<p>It's responsability of the network infrastructure to make the frame
+reach its destination.</p>
+<p>Usually, the frame are forwarded to switches until the target is
+reached.</p>
+<h1 id="ipv4">IPv4</h1>
+<h2 id="ipv4-address">IPv4 address</h2>
+<p>IPv4 uses 32-bit addresses; <code>4_294_967_296</code> possible
+addresses, though some are reserved for other purposes.</p>
+<p>Most often written as four octets of the address expressed
+individually in decimal numbers separated by periods.</p>
+<img src="/ctf-bootcamp/Session2/img/ipv4-address.png"/>
+<h2 id="ipv4-packet">IPv4 packet</h2>
+<p>Consists of a header concatenated with the payload.</p>
+<img src="/ctf-bootcamp/Session2/img/ipv4-packet.png"/>
+<p>Source address: the IPv4 address of the sending device</p>
+<p>Destination address: the IPv4 address of the destination device</p>
+<p>Protocol: identifies the protocol of the contained payload</p>
+<p>Time to Live (TTL): used to limit a datagram's lifetime</p>
+<h2 id="routing">Routing</h2>
+<img src="/ctf-bootcamp/Session2/img/ip-routing.png"/>
+<p>Each packet goes through routers that forward the packet to a router
+that should be closer to the intended destination device
+(<code>Destination address</code>).</p>
+<p>Each time a router receives a packet, it decrements the TTL by one,
+if it reaches zero it discards it instead of forwarding it.</p>
+<h1 id="why-ethernet-and-ipv4">Why Ethernet and IPv4?</h1>
+<p>Ethernet handles the local routing, between immediately physically
+connected devices.</p>
+<p>IPv4 (and IPv6) handles routing through multiple networks.</p>
+<h1 id="udp">UDP</h1>
+<p>Very simple protocol, encapsulates application layer messages with a
+small header.</p>
+<h2 id="ports">Ports</h2>
+<p>Within an operating system, a port identifies a specific application
+or service on a device.</p>
+<p>As such, many ports may be in use by multiple applications or even
+one alone.</p>
+<h3 id="port-number">Port number</h3>
+<p>A port is identified by a 16-bit integer, usually written a 16-bit
+integer.</p>
+<p>e.g., <code>22</code>, <code>80</code></p>
+<h3 id="well-known-and-registered-ports">Well-known and registered
+ports</h3>
+<p>Several port numbers are associated with specific network
+services.</p>
+<p>Applications interacting with those services default to using the
+known port number.</p>
+<p>Nonetheless, they are a suggestion only, any network service can run
+through any of the valid 65536 port numbers.</p>
+<table>
+<thead>
+<tr>
+<th>Port</th>
+<th>TCP</th>
+<th>UDP</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>21</td>
+<td>Yes</td>
+<td></td>
+<td>FTP control</td>
+</tr>
+<tr>
+<td>22</td>
+<td>Yes</td>
+<td></td>
+<td>SSH</td>
+</tr>
+<tr>
+<td>53</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>DNS</td>
+</tr>
+<tr>
+<td>80</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>HTTP</td>
+</tr>
+<tr>
+<td>443</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>HTTP over TLS</td>
+</tr>
+</tbody>
+</table>
+<h2 id="udp-datagram">UDP datagram</h2>
+<img src="/ctf-bootcamp/Session2/img/udp-datagram.png"/>
+<p>Source port: identifies the sender's port</p>
+<p>Destination port: identifies the receiver's port</p>
+<p>Length: length in bytes of the UDP datagram (header + payload)</p>
+<h1 id="tcp">TCP</h1>
+<p>As with UDP, it encapsulates application layer messages.</p>
+<p>But it provides many more features and as such is quite more
+complicated.</p>
+<h2 id="tcp-datagram">TCP datagram</h2>
+<img src="/ctf-bootcamp/Session2/img/tcp-segment.png"/>
+<p>Source port: identifies sending port</p>
+<p>Destination port: identifies receiving port</p>
+<p>Sequence number: used to identify the order of the data</p>
+<p>Acknowledgment number: used to indicate receipt of data</p>
+<p>ACK: Indicates acknowledgment</p>
+<p>SYN: Indicates initial sequence number</p>
+<p>FIN: Indicates it's the last packet from the sender</p>
+<h2 id="handshake">Handshake</h2>
+<p>Establishes the sequence numbers to use in the transmission.</p>
+<img src="/ctf-bootcamp/Session2/img/tcp-handshake.png"/>
+<p>This is why TCP is called connection-oriented. All data transmission
+in this TCP connection will continue from the sequence numbers decided
+in this step.</p>
+<h2 id="data-transmission">Data transmission</h2>
+<img src="/ctf-bootcamp/Session2/img/tcp-data_transfer.png"/>
+<p>Each packet sent is answered back with a packet ACKnowledging that
+the data was received.</p>
+<p>ACK number = sequence number of received segment + length of received
+data (SYN and FIN each consume one sequence number)</p>
+<h2 id="connection-termination">Connection termination</h2>
+<img src="/ctf-bootcamp/Session2/img/tcp-fin.png"/>
+<h1 id="tcp-vs-udp">TCP vs UDP</h1>
+<p>TCP handles a connection of bytes transferred between sender and
+receiver. UDP sends messages.</p>
+<p>TCP has error-correction, flow control, delivery guarantees, etc. UDP
+has no such things.</p>
+<p>As such, an application talking through UDP must implement such
+features if needed necessary (e.g., QUIC over UDP).</p>
+<h1 id="http">HTTP</h1>
+<p>Further explained in next session.</p>
+<p>Consists of a request answered by a response from the server.</p>
+<h2 id="request">Request</h2>
+{% highlight text %}
+METHOD /path HTTP/version
+Header-Name: value
+Header-Name: value
+
+[optional body]
+{% endhighlight %}
+{% highlight text %}
+GET / HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: github.com
+User-Agent: HTTPie/3.2.4
+{% endhighlight %}
+<h2 id="response">Response</h2>
+{% highlight text %}
+HTTP/version status_code status_text
+Header-Name: value
+Header-Name: value
+
+[optional body]
+{% endhighlight %}
+{% highlight text %}
+HTTP/1.1 301 Moved Permanently
+Content-Length: 0
+Location: https://github.com/
+{% endhighlight %}
+<h1 id="commands">Commands</h1>
+<h2 id="wireshark">wireshark</h2>
+<p>Interactively dump and analyze network traffic</p>
+<p><code>wireshark PCAP</code></p>
+<h3 id="find">Find</h3>
+<p>CTRL-f</p>
+<p>Write string or bytes.</p>
+<h3 id="filters">Filters</h3>
+<p>Write something on <code>Apply a display filter</code>.</p>
+<p>You can select a field from the dissection window to filter on that
+value.</p>
+<img src="/ctf-bootcamp/Session2/img/wireshark-dissection-filter.png"/>
+<h3 id="follow-stream">Follow stream</h3>
+<p>Right-click on packet, Follow -&gt; TCP/UDP.</p>
+<h3 id="statistics">Statistics</h3>
+<p>At Wireshark toolbar, Statistics</p>
+<p>Particularly <code>Endpoints</code> and
+<code>Protocol Hierarchy</code></p>
+<h3 id="extract-objects">Extract objects</h3>
+<p>At Wireshark toolbar, File -&gt; Export Objects, select protocol to
+export from.</p>
+<h2 id="reordercap">reordercap</h2>
+<p>Reorder input file by timestamp into output file</p>
+<p><code>reordercap INFILE OUTFILE</code></p>
+<h1 id="exercises">Exercises</h1>
+<ul>
+<li><p>PcapPoisoning <a href="https://play.picoctf.org/practice/challenge/362?category=4&amp;page=2&amp;solved=0">https://play.picoctf.org/practice/challenge/362?category=4&amp;page=2&amp;solved=0</a></p></li>
+<li><p>Packets Primer <a href="https://play.picoctf.org/practice/challenge/286?category=4&amp;page=3">https://play.picoctf.org/practice/challenge/286?category=4&amp;page=3</a></p></li>
+<li><p>shark on wire 1 <a href="https://play.picoctf.org/practice/challenge/30?category=4&amp;page=5">https://play.picoctf.org/practice/challenge/30?category=4&amp;page=5</a></p></li>
+<li><p>Ph4nt0m 1ntrud3r <a href="https://play.picoctf.org/practice/challenge/459?category=4&amp;page=1&amp;solved=0">https://play.picoctf.org/practice/challenge/459?category=4&amp;page=1&amp;solved=0</a></p></li>
+<li><p>Wireshark doo dooo do doo… <a href="https://play.picoctf.org/practice/challenge/115?category=4&amp;page=4">https://play.picoctf.org/practice/challenge/115?category=4&amp;page=4</a></p></li>
+<li><p>FindAndOpen <a href="https://play.picoctf.org/practice/challenge/348?category=4&amp;page=2&amp;solved=0">https://play.picoctf.org/practice/challenge/348?category=4&amp;page=2&amp;solved=0</a></p></li>
+</ul>
+<h1 id="exercises-extra">Exercises (Extra)</h1>
+<ul>
+<li><p>Eavesdrop <a href="https://play.picoctf.org/practice/challenge/264?category=4&amp;page=4">https://play.picoctf.org/practice/challenge/264?category=4&amp;page=4</a></p></li>
+<li><p>Trivial Flag Transfer Protocol <a href="https://play.picoctf.org/practice/challenge/103?category=4&amp;page=5">https://play.picoctf.org/practice/challenge/103?category=4&amp;page=5</a></p></li>
+</ul>
+<h1 id="further-learning">Further learning</h1>
+<ul>
+<li>pwn.college — Learn to Hack! <a href="https://pwn.college/">https://pwn.college/</a></li>
+<li>CCNA: Introduction to Networks <a href="https://www.netacad.com/courses/ccna-introduction-networks?courseLang=en-US">https://www.netacad.com/courses/ccna-introduction-networks?courseLang=en-US</a></li>
+<li>Free CCNA v1.1 200-301 | Complete Course 2026 <a href="https://www.youtube.com/playlist?list=PLxbwE86jKRgMpuZuLBivzlM8s2Dk5lXBQ">https://www.youtube.com/playlist?list=PLxbwE86jKRgMpuZuLBivzlM8s2Dk5lXBQ</a></li>
+</ul>
+<h1 id="references">References</h1>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers">https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers</a></li>
+</ul>
+<h1 id="hack-time">Hack time!</h1>
+<ul>
+<li><a href="https://play.picoctf.org/practice">https://play.picoctf.org/practice</a></li>
+</ul>

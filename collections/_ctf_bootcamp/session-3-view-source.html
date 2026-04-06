@@ -1,0 +1,396 @@
+---
+layout: post
+title: "CTF Bootcamp S3: View source"
+author: "GGG"
+date: 2026-04-06
+excerpt: "CTF Bootcamp S3: View source"
+comment: true
+---
+
+<p>This article adapts the bootcamp session notes into a readable post. <a href="/ctf-bootcamp/Session3/">View the slides</a>.</p>
+<h1 id="today">Today</h1>
+<ul>
+<li>Web apps</li>
+<li>HTTP
+<ul>
+<li>Format</li>
+<li>Status</li>
+<li>Headers</li>
+</ul></li>
+<li>HTML</li>
+<li>JS</li>
+<li>CSS</li>
+<li>Known files</li>
+<li>Hack time!</li>
+</ul>
+<h1 id="tools">Tools</h1>
+<p>Install please:</p>
+<ul>
+<li>httpie</li>
+<li>httrack</li>
+<li>katana</li>
+<li>Burp Suite</li>
+</ul>
+<h1 id="whats-a-web-app">What's a web app</h1>
+<p>Applications delivered over the wire by some server (e.g., the
+Internet) and executed by a web browser (e.g., Chrome, Firefox).</p>
+<p>They are very popular nowadays and are used for much any you may want
+to do (e.g., calendar, mail, banking, music, video).</p>
+<h1 id="web-app-interaction">Web app interaction</h1>
+<p>Web applications receive input from the user, such input is processed
+somehow (change the GUI, send data to the server).</p>
+<p>The client part of the web application (what runs on your browser and
+so on your computer) is on <strong>your</strong> control (altough most
+of the time it just does its thing). You can make your browser draw
+whatever on your screen and send anything back to the server.</p>
+<p>Of course, the server may not respond as you wish, some other party
+controls its code.</p>
+<h1 id="talking-to-the-server">Talking to the server</h1>
+<img src="/ctf-bootcamp/Session3/img/http-requests.png"/>
+<p>When the web application (on your browser) and the backend server (on
+some external server) communicate they use HTTP (Hypertext Transfer
+Protocol).</p>
+<h2 id="urls">URLs</h2>
+<img src="/ctf-bootcamp/Session3/img/url-structure.png"/>
+<h2 id="http">HTTP</h2>
+<ul>
+<li>Request-response protocol
+<ul>
+<li>A client makes a request, the server processes it and returns a
+response</li>
+</ul></li>
+<li>Stateless
+<ul>
+<li>Any state should be included in the requests (e.g., in the cookies,
+as extra form parameters, in the path or querystring of the URL).</li>
+</ul></li>
+</ul>
+<h2 id="message-format">Message format</h2>
+<h3 id="request">Request</h3>
+{% highlight text %}
+VERB /path HTTP/version
+Header: value
+Header: value
+
+(optional body)
+{% endhighlight %}
+<p>Note: even if no body is present, a newline must follow the
+headers.</p>
+<h3 id="response">Response</h3>
+{% highlight text %}
+HTTP/version status
+Header: value
+Header: value
+
+(optional body)
+{% endhighlight %}
+<h2 id="request-methods-verbs">Request methods (verbs)</h2>
+<p>Words that indicate the purpose of the request. They have each
+different semantics and the following list is their intended use case,
+nonetheless you could have an (ugly) web application using POSTs
+alone.</p>
+<ul>
+<li>GET: retrieve a resource</li>
+<li>POST: send data to a resource, may change state</li>
+<li>PUT: replaces a resource</li>
+<li>PATCH: modifies a resource</li>
+<li>DELETE: delete a resource</li>
+<li>OPTIONS: describe communication option for a resource</li>
+<li>HEAD: get GET response but without body (i.e., only the
+headers)</li>
+</ul>
+<p>We will mostly concern ourselves with GET and POST.</p>
+<h2 id="status-code">Status code</h2>
+<p>Returned by the server.</p>
+<p>Indicates what happened when processing the request.</p>
+<h3 id="categories">Categories</h3>
+<ul>
+<li>1xx: Informational</li>
+<li>2xx: Success</li>
+<li>3xx: Redirection</li>
+<li>4xx: Client errors</li>
+<li>5xx: Server errors</li>
+</ul>
+<h3 id="common-status">Common status</h3>
+<ul>
+<li>200 OK: Request succeeded</li>
+<li>302, 303, 307, 308: Redirect to another page</li>
+<li>400 Bad Request: Content of the request was wrong</li>
+<li>404 Not Found: Resource does not exist</li>
+<li>500 Internal Server Error: Unexpected crash from the server</li>
+</ul>
+<h3 id="note">Note</h3>
+<p>It's up to the server to pick a status to return. It could have went
+all wrong and return 200 OK still.</p>
+<h2 id="headers">Headers</h2>
+<p>Metadata about the request and responses.</p>
+<p>Many are standardized but you can include whatever header you want,
+it's up to the server to do something with it.</p>
+<h3 id="host-request">Host (request)</h3>
+<p>The domain the client wants to access</p>
+{% highlight text %}
+Host: example.com
+{% endhighlight %}
+<h3 id="user-agent-request">User-Agent (request)</h3>
+<p>Identification for the client app that's doing the request (e.g.,
+browser, curl, python)</p>
+{% highlight text %}
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+{% endhighlight %}
+<h3 id="set-cookie-response">Set-Cookie (response)</h3>
+<p>Indicates a cookie that the client should associate with the
+server.</p>
+{% highlight text %}
+Set-Cookie: session=abc123; Path=/; HttpOnly; Secure
+{% endhighlight %}
+<h3 id="cookie-request">Cookie (request)</h3>
+<p>Cookies stored by the client.</p>
+{% highlight text %}
+Cookie: session=abc123
+{% endhighlight %}
+<h3 id="authorization-request">Authorization (request)</h3>
+<p>Authentication credentials for the server.</p>
+{% highlight text %}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI...
+{% endhighlight %}
+<h3 id="content-type-request-and-response">Content-Type (request and
+response)</h3>
+<p>Indicates the content type of the message body.</p>
+{% highlight text %}
+Content-Type: application/x-www-form-urlencoded
+{% endhighlight %}
+<h3 id="location-response">Location (response)</h3>
+<p>In server redirect responses, indicates the location to go to.</p>
+{% highlight text %}
+Location: https://example.com/login
+{% endhighlight %}
+<h2 id="initial-request">Initial request</h2>
+<p>First you ask for a page.</p>
+{% highlight text %}
+GET / HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: www.wikipedia.org
+User-Agent: HTTPie/3.2.4
+{% endhighlight %}
+<p>And you get it back.</p>
+{% highlight text %}
+HTTP/1.1 200 OK
+accept-ranges: bytes
+age: 35491
+cache-control: s-maxage=86400, must-revalidate, max-age=3600
+content-encoding: gzip
+content-length: 26368
+content-type: text/html
+date: Sat, 22 Nov 2025 10:25:11 GMT
+etag: W/"1bb6c-6426794fdf540"
+last-modified: Thu, 30 Oct 2025 22:15:09 GMT
+[snip…]
+
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<title>Wikipedia</title>
+<meta name="description" content="Wikipedia is a free online encyclopedia, created
+and edited by volunteers around the world and hosted by the Wikimedia Foundation.">
+[snip…]
+{% endhighlight %}
+<p>The browser (probably) knows how to render the result data.</p>
+<h2 id="further-requests">Further requests</h2>
+<p>All interactions with the server are further done with HTTP
+requests.</p>
+<p>Logging in to a site:</p>
+{% highlight text %}
+POST /login HTTP/1.1
+Host: example.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 33
+
+username=admin&password=secret123
+{% endhighlight %}
+<p>We get a response:</p>
+{% highlight text %}
+HTTP/1.1 200 OK
+Content-Type: application/json
+Set-Cookie: session_id=ab34ff1290d...; Path=/; HttpOnly; Secure
+{% endhighlight %}
+<p>The cookie is used in further requests to let the server know we have
+authenticated.</p>
+{% highlight text %}
+GET /account/profile HTTP/1.1
+Host: example.com
+Cookie: session_id=ab34ff1290da88f112233
+{% endhighlight %}
+{% highlight text %}
+HTTP/1.1 200 OK
+Content-Type: text/plain; charset=utf-8
+
+Hello, user admin
+{% endhighlight %}
+<h1 id="whats-on-your-browser">What's on your browser</h1>
+<p>Your web browser supports many file formats. The main ones are HTML,
+CSS and JavaScript.</p>
+<h2 id="html">HTML</h2>
+<img src="/ctf-bootcamp/Session3/img/html-tree.png"/>
+<p>It specifies the structure of the page (text, images, buttons, input
+fields, etc) and the behaviours of some elements (e.g., buttons send
+some data to servers).</p>
+<img src="/ctf-bootcamp/Session3/img/html-tag-breakdown.png"/>
+<h2 id="css">CSS</h2>
+<p>Controls the styling (e.g., color, layout, fonts) of the elements in
+the HTML.</p>
+<h2 id="javascript">JavaScript</h2>
+<p>Program code that runs on your browser and interacts with the HTML
+(e.g., receive events from the user, change the page structure) and can
+send data over to the server and receive the results.</p>
+<h2 id="section"></h2>
+<p>HTML = structure</p>
+<p>CSS = presentation</p>
+<p>JavaScript = behaviour</p>
+<h2 id="browser-utilities">Browser utilities</h2>
+<p>The browser has some utilities to inspect web pages.</p>
+<ul>
+<li>Right-click, view page source: View received HTML from server</li>
+<li>Developer console
+<ul>
+<li>Inspector: View live view of the site, probably mutated by JS</li>
+<li>Console: Evaluate JS on current context</li>
+<li>Network: See HTTP requests done by the site</li>
+<li>Storage: See data stored by the browser about the site</li>
+</ul></li>
+</ul>
+<h1 id="the-remote-component">The remote component</h1>
+<p>While your browser handles the frontend, the server handles the
+backend, the logic you don't see.</p>
+<p>This part may be written in any language that the server computer can
+execute (common choices are PHP, Python, and server side JavaScript
+itself).</p>
+<h2 id="where-is-the-data">Where is the data?</h2>
+<p>The remote server has to store the users data (e.g., mails,
+passwords, posts, messages) somewhere. It usually uses a SQL
+implementation.</p>
+<p>The web server may do something like this to retrieve the users.</p>
+{% highlight text %}
+SELECT * FROM users
+WHERE username = 'alice'
+  AND password = 'password123';
+{% endhighlight %}
+<p>Similar queries would be used to create a new user, change a user's
+password, create a new post, and so.</p>
+<h1 id="known-files">Known files</h1>
+<p>There are some common files usually exposed by web servers.</p>
+<p>We can use them to enumerate the service.</p>
+<h2 id="robots.txt"><code>robots.txt</code></h2>
+<p>Tells bots which paths they are allowed/disallowed to visit.</p>
+<p>Of course, the bots are able to ignore it.</p>
+<h3 id="example">Example</h3>
+{% highlight text %}
+User-agent: *
+Disallow: /admin
+Disallow: /backup
+Disallow: /internal-api
+Disallow: /secret-panel
+{% endhighlight %}
+<h2 id="sitemap.xml"><code>sitemap.xml</code></h2>
+<p>List URLs on the site to make indexing easier.</p>
+<h3 id="example-1">Example</h3>
+{% highlight text %}
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset>
+  <url>
+    <loc>https://example.com/</loc>
+  </url>
+  <url>
+    <loc>https://example.com/login</loc>
+  </url>
+  <url>
+    <loc>https://example.com/admin</loc>
+  </url>
+  <url>
+    <loc>https://example.com/api/v1/users</loc>
+  </url>
+  <url>
+    <loc>https://example.com/dev-dashboard</loc>
+  </url>
+</urlset>
+{% endhighlight %}
+<h1 id="commands">Commands</h1>
+<h2 id="curl">curl</h2>
+<p>Don't. Prefer httpie, it's friendlier.</p>
+<h2 id="httppie">http(pie)</h2>
+<p>Make HTTP(S) requests.</p>
+{% highlight text %}
+http [METHOD] URL [Header:value] [url_parameter==value] [form_attr=value]
+{% endhighlight %}
+<p>HTTPie does POST JSON requests when given data, -f specifies
+<code>application/x-www-form-urlencoded</code>.</p>
+{% highlight text %}
+http -f URL [form_attr=value]
+{% endhighlight %}
+<p>You can show the sent request by using <code>-v</code>.</p>
+{% highlight text %}
+http -v URL
+{% endhighlight %}
+<p>Much recommended.</p>
+<h2 id="katana">katana</h2>
+<p>Crawls a page and returns the found URLs.</p>
+{% highlight text %}
+katana -u URL
+{% endhighlight %}
+<p>Recommended to use some flags to juice it up.</p>
+{% highlight text %}
+katana -td -jc -d 10 -pc -kf all -u URL
+{% endhighlight %}
+<p>Check the <code>--help</code> for explanations.</p>
+<h2 id="httrack">httrack</h2>
+<p>Create a mirror of a a website to the disk.</p>
+{% highlight text %}
+httrack URL
+{% endhighlight %}
+<p>May be useful if you want to browse a website components offline.
+(Maybe grep? 👀)</p>
+<h2 id="burp-suite">Burp Suite</h2>
+<p>Soon™</p>
+<h1 id="exercises">Exercises</h1>
+<ul>
+<li><p>Inspect HTML <a href="https://play.picoctf.org/practice/challenge/275">https://play.picoctf.org/practice/challenge/275</a></p></li>
+<li><p>where are the robots <a href="https://play.picoctf.org/practice/challenge/4">https://play.picoctf.org/practice/challenge/4</a></p></li>
+<li><p>head-dump <a href="https://play.picoctf.org/practice/challenge/476">https://play.picoctf.org/practice/challenge/476</a></p></li>
+<li><p>Includes <a href="https://play.picoctf.org/practice/challenge/274">https://play.picoctf.org/practice/challenge/274</a></p></li>
+<li><p>Local Authority <a href="https://play.picoctf.org/practice/challenge/278">https://play.picoctf.org/practice/challenge/278</a></p></li>
+<li><p>GET aHEAD <a href="https://play.picoctf.org/practice/challenge/132">https://play.picoctf.org/practice/challenge/132</a></p></li>
+<li><p>Cookie Monster Secret Recipe <a href="https://play.picoctf.org/practice/challenge/469">https://play.picoctf.org/practice/challenge/469</a></p></li>
+<li><p>Bookmarklet <a href="https://play.picoctf.org/practice/challenge/406">https://play.picoctf.org/practice/challenge/406</a></p></li>
+<li><p>Crack the Gate 1 <a href="https://play.picoctf.org/practice/challenge/520">https://play.picoctf.org/practice/challenge/520</a></p></li>
+<li><p>picobrowser <a href="https://play.picoctf.org/practice/challenge/9">https://play.picoctf.org/practice/challenge/9</a></p></li>
+<li><p>Insp3ct0r <a href="https://play.picoctf.org/practice/challenge/18">https://play.picoctf.org/practice/challenge/18</a></p></li>
+<li><p>dont-use-client-side <a href="https://play.picoctf.org/practice/challenge/66">https://play.picoctf.org/practice/challenge/66</a></p></li>
+</ul>
+<h1 id="exercises-cont">Exercises (cont)</h1>
+<ul>
+<li><p>login <a href="https://play.picoctf.org/practice/challenge/200">https://play.picoctf.org/practice/challenge/200</a></p></li>
+<li><p>logon <a href="https://play.picoctf.org/practice/challenge/46">https://play.picoctf.org/practice/challenge/46</a></p></li>
+<li><p>MatchTheRegex <a href="https://play.picoctf.org/practice/challenge/356">https://play.picoctf.org/practice/challenge/356</a></p></li>
+<li><p>Power Cookie <a href="https://play.picoctf.org/practice/challenge/288">https://play.picoctf.org/practice/challenge/288</a></p></li>
+<li><p>Roboto Sans <a href="https://play.picoctf.org/practice/challenge/291">https://play.picoctf.org/practice/challenge/291</a></p></li>
+<li><p>findme <a href="https://play.picoctf.org/practice/challenge/349">https://play.picoctf.org/practice/challenge/349</a></p></li>
+<li><p>Secrets <a href="https://play.picoctf.org/practice/challenge/296">https://play.picoctf.org/practice/challenge/296</a></p></li>
+<li><p>Cookies <a href="https://play.picoctf.org/practice/challenge/173">https://play.picoctf.org/practice/challenge/173</a></p></li>
+<li><p>Search source <a href="https://play.picoctf.org/practice/challenge/295">https://play.picoctf.org/practice/challenge/295</a></p></li>
+<li><p>Scavenger Hunt <a href="https://play.picoctf.org/practice/challenge/161">https://play.picoctf.org/practice/challenge/161</a></p></li>
+<li><p>Client-side-again <a href="https://play.picoctf.org/practice/challenge/69">https://play.picoctf.org/practice/challenge/69</a></p></li>
+</ul>
+<h1 id="further-learning">Further learning</h1>
+<ul>
+<li>pwn.college — Learn to Hack! <a href="https://pwn.college/">https://pwn.college/</a></li>
+</ul>
+<h1 id="references">References</h1>
+<ul>
+<li><a href="https://developer.mozilla.org/">https://developer.mozilla.org/</a></li>
+</ul>
+<h1 id="hack-time">Hack time!</h1>
+<ul>
+<li><a href="https://play.picoctf.org/practice">https://play.picoctf.org/practice</a></li>
+</ul>

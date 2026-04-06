@@ -1,0 +1,860 @@
+---
+layout: post
+title: "CTF Bootcamp S1: What's a JPEG?"
+author: "GGG"
+date: 2026-04-06
+excerpt: "CTF Bootcamp S1: What's a JPEG?"
+comment: true
+---
+
+<p>This article adapts the bootcamp session notes into a readable post. <a href="/ctf-bootcamp/Session1/">View the slides</a>.</p>
+<h1 id="today">Today</h1>
+<ul>
+<li>File commands</li>
+<li>File formats
+<ul>
+<li>Magic bytes and file structures</li>
+</ul></li>
+<li>Metadata and hidden information</li>
+<li>Abusing file formats
+<ul>
+<li>Embedded files</li>
+<li>Polyglots</li>
+</ul></li>
+<li>Steganography basics</li>
+<li>Disk storage
+<ul>
+<li>Filesystems</li>
+<li>Partitions and disk images</li>
+</ul></li>
+<li>Hack time!</li>
+</ul>
+<p>Download ImHex please</p>
+<h1 id="some-more-commands">Some more commands</h1>
+<h2 id="touch"><code>touch</code></h2>
+<p><del>Change file timestamps</del> Create files</p>
+<p><code>touch FILE</code></p>
+{% highlight text %}
+$ ls
+A
+$ touch B C D
+$ ls
+A  B  C  D
+{% endhighlight %}
+<h2 id="cp">cp</h2>
+<p>Copy files and directories</p>
+<p><code>cp SRC DST</code></p>
+{% highlight text %}
+$ ls
+A
+
+$ cp A B
+
+$ ls
+A  B
+{% endhighlight %}
+<p>Can also specify a target directory to copy files into it with the
+original names</p>
+<p><code>cp SRC DST-DIR</code></p>
+{% highlight text %}
+$ ls -la
+total 0
+drwx------ 1 alvar alvar     6 Oct 18 10:17 .
+drwxrwxrwt 1 root  root  12802 Oct 18 10:19 ..
+-rw-r--r-- 1 alvar alvar     0 Oct 18 10:15 A
+drwxr-xr-x 1 alvar alvar     2 Oct 18 10:17 D1
+
+
+$ ls -la D1
+total 0
+drwxr-xr-x 1 alvar alvar 0 Oct 18 10:17 .
+drwx------ 1 alvar alvar 6 Oct 18 10:17 ..
+
+$ cp A D1
+
+$ ls -la D1
+total 0
+drwxr-xr-x 1 alvar alvar 2 Oct 18 10:17 .
+drwx------ 1 alvar alvar 6 Oct 18 10:17 ..
+-rw-r--r-- 1 alvar alvar 0 Oct 18 10:17 A
+{% endhighlight %}
+<p>For directories (copy all files contained)
+<code>cp -r SRC DST</code></p>
+<h2 id="mv">mv</h2>
+<p>Move (or rename) files</p>
+<p><code>mv SRC DST</code></p>
+{% highlight text %}
+$ ls -l
+total 0
+-rw-r--r-- 1 alvar alvar 0 Oct 18 10:15 A
+
+$ mv A B
+
+$ ls -l
+total 0
+-rw-r--r-- 1 alvar alvar 0 Oct 18 10:15 B
+{% endhighlight %}
+<p>Can also specify a target directory.</p>
+<p><code>mv SRC DST-DIR</code></p>
+{% highlight text %}
+$ ls -l
+total 0
+-rw-r--r-- 1 alvar alvar 0 Oct 18 10:15 A
+drwxr-xr-x 1 alvar alvar 0 Oct 18 10:21 D1
+
+$ mv A D1/
+
+$ ls -l
+total 0
+drwxr-xr-x 1 alvar alvar 2 Oct 18 10:22 D1
+
+$ ls -l D1
+total 0
+-rw-r--r-- 1 alvar alvar 0 Oct 18 10:15 A
+{% endhighlight %}
+<h2 id="rm">rm</h2>
+<p>Remove files</p>
+<p><code>rm FILE</code></p>
+{% highlight text %}
+$ ls -la
+total 0
+drwx------ 1 alvar alvar     4 Oct 18 14:42 .
+drwxrwxrwt 1 root  root  12546 Oct 18 14:42 ..
+-rw-r--r-- 1 alvar alvar     0 Oct 18 14:42 A
+-rw-r--r-- 1 alvar alvar     0 Oct 18 14:42 B
+
+$ rm A
+
+$ ls -la
+total 0
+drwx------ 1 alvar alvar     2 Oct 18 14:42 .
+drwxrwxrwt 1 root  root  12546 Oct 18 14:42 ..
+-rw-r--r-- 1 alvar alvar     0 Oct 18 14:42 B
+{% endhighlight %}
+<p><code>-r</code> flag again for recursive removal</p>
+<p><code>rm -r DIR</code></p>
+{% highlight text %}
+$ ls -la
+total 0
+drwx------ 1 alvar alvar     4 Oct 18 10:23 .
+drwxrwxrwt 1 root  root  12802 Oct 18 10:23 ..
+drwxr-xr-x 1 alvar alvar     0 Oct 18 10:23 D1
+
+$ rm -r D1
+
+$ ls -la
+total 0
+drwx------ 1 alvar alvar     0 Oct 18 10:23 .
+drwxrwxrwt 1 root  root  12802 Oct 18 10:23 ..
+{% endhighlight %}
+<h2 id="curl">curl</h2>
+<p><del>Transfer a URL</del> Make a request and show result</p>
+<p><code>curl URL</code></p>
+{% highlight text %}
+$ curl https://httpbin.org/uuid
+{
+  "uuid": "9f213496-f49e-4554-9f12-ebae5dbbcb56"
+}
+{% endhighlight %}
+<p>Can also save the results into a file</p>
+<p><code>curl -O URL</code></p>
+{% highlight text %}
+$ curl -O https://httpbin.org/uuid
+
+$ ls
+uuid
+
+$ cat uuid
+{
+  "uuid": "50785cd7-1b45-45a7-b352-ef4deb41104b"
+}
+{% endhighlight %}
+<p>As always, you could also redirect it into a file
+(<code>curl https://httpbin.org/uuid &gt;FILE</code>)</p>
+<h2 id="wget">wget</h2>
+<p>Download file</p>
+<p>Like <code>curl -O</code></p>
+{% highlight text %}
+$ wget https://httpbin.org/uuid
+--2025-10-18 10:30:52--  https://httpbin.org/uuid
+Resolving httpbin.org (httpbin.org)... 3.222.43.217, 35.171.138.34, 54.157.190.211, ...
+Connecting to httpbin.org (httpbin.org)|3.222.43.217|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 53 [application/json]
+Saving to: ‘uuid’
+
+uuid                                100%[=================================================================>]      53  --.-KB/s    in 0s
+
+2025-10-18 10:30:52 (325 KB/s) - ‘uuid’ saved [53/53]
+
+$ cat uuid
+{
+  "uuid": "8f135901-5b01-49ac-a384-5d1ae7d2c299"
+}
+{% endhighlight %}
+<h2 id="less">less</h2>
+<p>Displays the content of a file paged</p>
+<p><code>less FILE</code></p>
+{% highlight text %}
+$ less flag.txt
+TRY IT YOURSELF
+{% endhighlight %}
+<h2 id="history">history</h2>
+<p>Show history list (commands ran)</p>
+<p><code>history</code></p>
+{% highlight text %}
+$ history
+  1  ls
+  2  pwd
+  3  cd ~
+  4  ls
+  5  id
+{% endhighlight %}
+<h2 id="clear">clear</h2>
+<p>Clears terminal screen</p>
+<p><code>clear</code></p>
+{% highlight text %}
+$ clear
+TRY IT YOURSELF
+{% endhighlight %}
+<h1 id="hacking">Hacking</h1>
+<blockquote>
+<p>By convention sweet is sweet, bitter is bitter, hot is hot, cold is
+cold, color is color; but in truth there are only atoms and the void. —
+Democritus</p>
+</blockquote>
+<h1 id="what-language-is">What language is?</h1>
+{% highlight text %}
+#include/*
+q="""*/<stdio.h>
+int main() {putchar('C'); if(sizeof('C') - 1);
+    else   {putchar('+'); putchar('+');&#125;&#125; /*=;
+print'Perl'#";print'Ruby'#""";print('Python')#*/
+{% endhighlight %}
+<h2 id="many">Many</h2>
+{% highlight text %}
+$ gcc code.c && ./a.out
+C
+
+$ g++ code.c && ./a.out
+C++
+
+$ python3 code.c
+Python
+
+$ perl code.c
+Perl
+
+$ ruby code.c
+Ruby
+{% endhighlight %}
+<h3 id="c">C</h3>
+{% highlight c %}
+#include/*
+q="""*/<stdio.h>
+int main() {putchar('C'); if(sizeof('C') - 1);
+    else   {putchar('+'); putchar('+');&#125;&#125; /*=;
+print'Perl'#";print'Ruby'#""";print('Python')#*/
+{% endhighlight %}
+<h3 id="python">Python</h3>
+{% highlight python %}
+#include/*
+q="""*/<stdio.h>
+int main() {putchar('C'); if(sizeof('C') - 1);
+    else   {putchar('+'); putchar('+');&#125;&#125; /*=;
+print'Perl'#";print'Ruby'#""";print('Python')#*/
+{% endhighlight %}
+<h2 id="how-come-thats-pythonccperlruby">How come that's
+Python/C/C++/Perl/Ruby?</h2>
+<p>When you try to compile/interpret source code the
+compiler/interpreter tries to interpret the source according to the
+corresponding language rules.</p>
+<h1 id="whats-a-file-format">What's a file format?</h1>
+<p>Programming languages define what constructs can be present and what
+operations they represent.</p>
+<p>Likewise, file formats specify what data is stored in the file, their
+encoding, and what meaning it has.</p>
+<p>Applications are programmed to interpret the file contents (bytes)
+and do something appropriate with them.</p>
+<p>E.g., image viewers draw the image, audio players reproduce the
+sound.</p>
+<h2 id="common-structure">Common structure</h2>
+<p>File format specifications are up for grabs, they can be defined any
+way.</p>
+<p>Nonetheless, most file formats can be separated in three separate
+parts.</p>
+<p>Header: First part of the data, contains directives that specify how
+must the rest of the data be interpreted (e.g., pixel format for images)
+or some extra informational data (e.g., music artist, geolocation).</p>
+<p>Data/payload: Part enclosed by the header and footer. Contains the
+expected <em>content</em> of the file (e.g., image representation for
+images, audio information for audio).</p>
+<p>Footer/trailer: Last part of the data, may contain extra information
+not included in the header and some integrity information.</p>
+<h2 id="bmp">BMP</h2>
+<img src="/ctf-bootcamp/Session1/img/bmp3.png"/>
+<h2 id="magic-bytes">Magic bytes</h2>
+<p>File headers (and so, the file itself) usually start with some
+predetermined bytes that specify what file format is being followed.
+These are called signatures, magic bytes or magic numbers.</p>
+<p>Example file signatures:</p>
+<table>
+<thead>
+<tr>
+<th>File format</th>
+<th>Magic</th>
+<th>ASCII</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PNG</td>
+<td>89 50 4E 47 0D 0A 1A 0A</td>
+<td>.PNG….</td>
+</tr>
+<tr>
+<td>JPG/JFIF</td>
+<td>FF D8 FF E0</td>
+<td>….</td>
+</tr>
+<tr>
+<td>PDF</td>
+<td>25 50 44 46 2D</td>
+<td>%PDF-</td>
+</tr>
+<tr>
+<td>ZIP</td>
+<td>50 4B 03 04</td>
+<td>PK..</td>
+</tr>
+<tr>
+<td>ELF</td>
+<td>7F 45 4C 46</td>
+<td>.ELF</td>
+</tr>
+</tbody>
+</table>
+{% highlight text %}
+$ xxd -l 16 mystery
+00000000: 8950 4e47 0d0a 1a0a 0000 000d 4948 4452  .PNG........IHDR
+{% endhighlight %}
+<h2 id="metadata">Metadata</h2>
+<p>The data in the header and footer is usually called metadata as it
+specifies properties of the <em>main</em> data stored in the middle
+section.</p>
+<p>Some fields in this sections can be modified without having any
+impact in the rest of the file (good for hiding things).</p>
+<h3 id="exiftool"><code>exiftool</code></h3>
+<p>Read and write meta information from files</p>
+<p><code>exiftool FILE</code></p>
+{% highlight text %}
+$ exiftool mystery.png
+ExifTool Version Number         : 13.25
+File Name                       : mystery.png
+Directory                       : Investigative Reversing 0
+File Size                       : 125 kB
+File Modification Date/Time     : 2025:09:13 10:17:50-05:00
+File Access Date/Time           : 2025:10:18 11:09:56-05:00
+File Inode Change Date/Time     : 2025:09:13 10:17:50-05:00
+File Permissions                : -rw-r--r--
+File Type                       : PNG
+File Type Extension             : png
+MIME Type                       : image/png
+Image Width                     : 1411
+Image Height                    : 648
+Bit Depth                       : 8
+Color Type                      : RGB
+Compression                     : Deflate/Inflate
+Filter                          : Adaptive
+Interlace                       : Noninterlaced
+SRGB Rendering                  : Perceptual
+Gamma                           : 2.2
+Pixels Per Unit X               : 5669
+Pixels Per Unit Y               : 5669
+Pixel Units                     : meters
+Warning                         : [minor] Trailer data after PNG IEND chunk
+Image Size                      : 1411x648
+Megapixels                      : 0.914
+{% endhighlight %}
+<h3 id="mediainfo"><code>mediainfo</code></h3>
+<p>Reads metadata for media file type.</p>
+<p><code>mediainfo FILE</code></p>
+{% highlight text %}
+$ mediainfo mystery.png
+General
+Complete name                            : mystery.png
+Format                                   : PNG
+Format/Info                              : Portable Network Graphic
+File size                                : 122 KiB
+
+Image
+Format                                   : PNG
+Format/Info                              : Portable Network Graphic
+Compression                              : Deflate
+Format settings                          : Linear
+Width                                    : 1 411 pixels
+Height                                   : 648 pixels
+Display aspect ratio                     : 2.2:1
+Color space                              : RGB
+Bit depth                                : 8 bits
+Compression mode                         : Lossless
+Stream size                              : 122 KiB (100%)
+Gamma                                    : 0.455
+{% endhighlight %}
+<h2 id="what-about-file-extensions">What about file extensions?</h2>
+<p>File extensions are just part of the filename, they are for
+referential purposes only.</p>
+<p>As they are part of the filename, changing the file extension changes
+nothing about the contents itself. Changing <code>image.png</code> to
+<code>image.jpg</code> does not change the fact that the bytes in the
+file represent an image in the PNG format.</p>
+<p>Nonetheless, some applications (e.g., Windows File Explorer)
+associate programs with file extensions and when the user asks to open a
+file the associated program is invoked.</p>
+<h2 id="tar">TAR</h2>
+<img src="/ctf-bootcamp/Session1/img/TAR.png"/>
+<p>ImHex demo</p>
+<h2 id="a5ea14cd-d603-462a-9d57-0cfe8690c55f">PNG</h2>
+<img src="/ctf-bootcamp/Session1/img/png.png"/>
+<p>Specification detailed at <a href="https://www.w3.org/TR/png/">https://www.w3.org/TR/png/</a></p>
+{% highlight text %}
+$ xxd -l 128 mystery.png
+00000000: 8950 4e47 0d0a 1a0a 0000 000d 4948 4452  .PNG........IHDR
+00000010: 0000 0583 0000 0288 0802 0000 00ad f072  ...............r
+00000020: 9900 0000 0173 5247 4200 aece 1ce9 0000  .....sRGB.......
+00000030: 0004 6741 4d41 0000 b18f 0bfc 6105 0000  ..gAMA......a...
+00000040: 0009 7048 5973 0000 1625 0000 1625 0149  ..pHYs...%...%.I
+00000050: 5224 f000 00ff a549 4441 5478 5eec dd79  R$.....IDATx^..y
+00000060: 5c15 d5ff 3ff0 b897 e5b2 cabe 08c8 e276  \...?..........v
+00000070: dd71 474d 2573 c11d 3315 9714 9712 b7c2  .qGM%s..3.......
+{% endhighlight %}
+<h2 id="its-all-on-the-opening-application">It's all on the opening
+application</h2>
+<p>As with source code, a file does not have an inherent type to it, it
+all depends as to whether is valid for some purpose. (Can you listen to
+a JPEG?)</p>
+<p>A image file viewer will be able to open diverse image files (e.g.,
+PNG, JPEG, BMP) by identifying the image type (using the magic bytes)
+and continuing the parsing and display accordingly.</p>
+<p>The same image file could be opened with <code>exiftool</code> and it
+will print the metadata.</p>
+<p>Finally, it can be opened by text editors and it will probably try to
+interpret the bytes as ASCII or UTF-8, which will likely result on some
+weird output to the screen due to many characters being unprintable
+(recall: ASCII is not defined for <code>0x80</code>-<code>0xFF</code>
+bytes).</p>
+<h1 id="exercises">Exercises</h1>
+<ul>
+<li><p>Glory of the Garden <a href="https://play.picoctf.org/practice/challenge/44">https://play.picoctf.org/practice/challenge/44</a></p></li>
+<li><p>extensions <a href="https://play.picoctf.org/practice/challenge/52">https://play.picoctf.org/practice/challenge/52</a></p></li>
+<li><p>So Meta <a href="https://play.picoctf.org/practice/challenge/19">https://play.picoctf.org/practice/challenge/19</a></p></li>
+<li><p>Lookey here <a href="https://play.picoctf.org/practice/challenge/279">https://play.picoctf.org/practice/challenge/279</a></p></li>
+<li><p>CanYouSee <a href="https://play.picoctf.org/practice/challenge/408">https://play.picoctf.org/practice/challenge/408</a></p></li>
+<li><p>Enhance! <a href="https://play.picoctf.org/practice/challenge/265">https://play.picoctf.org/practice/challenge/265</a></p></li>
+<li><p>Mob psycho <a href="https://play.picoctf.org/practice/challenge/420">https://play.picoctf.org/practice/challenge/420</a></p></li>
+</ul>
+<h1 id="hiding-files">Hiding files</h1>
+<p>File formats usually have some parts in which extra data can be added
+without perturbing the file correctness.</p>
+<h2 id="png-any">PNG + ANY</h2>
+<p>PNG files can contain data after the <code>IEND</code> chunk. So we
+can concatenate any data to our PNG and it will be there for someone who
+tries to search for it.</p>
+<h3 id="binwalk">binwalk</h3>
+<p>Identify and extract files embedded inside other files</p>
+<p><code>binwalk FILE</code></p>
+{% highlight text %}
+$ cat cat.png confidential.pdf >cat-confidential.png
+
+$ file cat-confidential.png
+cat-confidential.png: PNG image data, 1663 x 2057, 8-bit/color RGBA, non-interlaced
+
+$ binwalk cat-confidential.png
+
+                                                   /tmp/tmp.qf3FR0nhhC/cat-confidential.png
+----------------------------------------------------------------------------------------------------------------------------------------------
+DECIMAL                            HEXADECIMAL                        DESCRIPTION
+----------------------------------------------------------------------------------------------------------------------------------------------
+0                                  0x0                                PNG image, total size: 2856846 bytes
+2856846                            0x2B978E                           PDF document, version 1.7
+----------------------------------------------------------------------------------------------------------------------------------------------
+
+Analyzed 1 file for 85 file signatures (187 magic patterns) in 6.0 milliseconds
+{% endhighlight %}
+<p>Extract the found files.</p>
+<p><code>binwalk -e FILE</code></p>
+<h1 id="polyglots">Polyglots</h1>
+<p>In fact, there are some combinations of formats that can apply to a
+same file at the same time.</p>
+<h2 id="png-zip">PNG + ZIP</h2>
+<p>While most file formats are read from start to end, ZIP files are
+read backwards. Therefore, concatenating a PNG and ZIP files results in
+a valid PNG <strong>and</strong> ZIP, there's no need to carve the data
+out with <code>binwalk</code>.</p>
+{% highlight text %}
+$ cat cat.png hello.zip >cat-hello.png
+
+$ file cat.png
+cat.png: PNG image data, 1663 x 2057, 8-bit/color RGBA, non-interlaced
+
+$ unzip cat-hello.png
+Archive:  cat-hello.png
+warning [cat-hello.png]:  2856846 extra bytes at beginning or within zipfile
+  (attempting to process anyway)
+ extracting: hello.txt
+
+$ cat hello.txt
+Hello, world
+{% endhighlight %}
+<p>Much more elaborate combinations are possible.</p>
+<h2 id="some-tools">Some tools</h2>
+<h3 id="remember">Remember</h3>
+<p><code>file</code>: Determine file type (using signatures)</p>
+<p><code>xxd</code>: Do a hexdump or reverse it</p>
+<p><code>strings</code>: Search for printable characters in files</p>
+<p><strong>Tip</strong>: always run <code>strings</code></p>
+<h3 id="pngcheck">pngcheck</h3>
+<p>Test PNG files for corruption, and print size/type info.</p>
+<p>Shows more information. <code>pngcheck -v FILE</code></p>
+{% highlight text %}
+$ pngcheck -v advanced-potion-making-orig.png
+File: advanced-potion-making-orig.png (30372 bytes)
+  this is neither a PNG or JNG image nor a MNG stream
+ERRORS DETECTED in advanced-potion-making-orig.png
+
+$ pngcheck -v flag.png
+File: like1000/flag.png (13114 bytes)
+  chunk IHDR at offset 0x0000c, length 13
+    1642 x 1095 image, 24-bit RGB, non-interlaced
+  chunk sRGB at offset 0x00025, length 1
+    rendering intent = perceptual
+  chunk gAMA at offset 0x00032, length 4: 0.45455
+  chunk pHYs at offset 0x00042, length 9: 5669x5669 pixels/meter (144 dpi)
+  chunk IDAT at offset 0x00057, length 13007
+    zlib: deflated, 32K window, fast compression
+  chunk IEND at offset 0x03332, length 0
+No errors detected in like1000/flag.png (6 chunks, 99.8% compression).
+{% endhighlight %}
+<h3 id="c92b73ea-e955-44ab-9384-971bf96e5123">ImHex</h3>
+<p>A Hex Editor for Reverse Engineers, Programmers.</p>
+<p>Allows to read and edit the bytes in a file.</p>
+<p><code>imhex FILE</code></p>
+<img src="/ctf-bootcamp/Session1/img/imhex.png"/>
+<h1 id="stego">Stego</h1>
+<p>As before, data can be hidden inside other file format, this can be
+made covert in many levels.</p>
+<p>Before we saw that some formats allow concatenating data to the end
+of the file.</p>
+<p>We could also store arbitrary information in the informational
+fields, e.g., store some string in the <code class="verbatim">Album Author</code> field of a MP3 file, or even a
+whole image (whether in binary, hex, or base64).</p>
+<h2 id="lsb-least-significant-bit-in-images">LSB (least significant bit)
+in images</h2>
+<p>As images (usually) represent pixels as RGB triplets (or RGBA with
+the alpha—transparency—channel), we could write a message of our
+choosing using the least significant bits in each pixel channel</p>
+<p>As the least significant bit in each value is the one with the least
+impact in the value itself, the image won't look different from the
+original to the naked eye.</p>
+<img src="/ctf-bootcamp/Session1/img/blue-lsb.webp"/>
+<h3 id="example">Example</h3>
+<p>If we wanted to hide the string <code>hello</code>
+(<code>0b110100001100101011011000110110001101111</code>) in an image, we
+would take the first (top left) RGB tripet (e.g, if the image was all
+red each triplet would be 255, 0, 0), replace the least significant bit
+in the R value with the first bit (1) of our message:</p>
+<p>255 = 0b11111111 → 0b11111111</p>
+<p>The first bit in the G value with the second (1): 0 = 0b00000000 →
+0b00000001</p>
+<p>The first bit in the B value with the third (0): 0 = 0b00000000 →
+0b00000000</p>
+<p>And then on the second RGB triplet for the rest of the bits.</p>
+<p>First bit of R part of second triplet with fourth bit in message
+(1)</p>
+<p>255 = 0b11111111 → 0b11111111</p>
+<p>And so on until the message was completely hidden in the image.</p>
+<h2 id="tools">Tools</h2>
+<h3 id="zsteg">zsteg</h3>
+<p>Check for LSB (and others) steganography on images.</p>
+<p><code>zsteg IMAGE</code></p>
+{% highlight text %}
+$ zsteg image.png
+b1,r,lsb,xy         .. text: "^5>R5YZrG"
+b1,rgb,lsb,xy       .. text: "picoCTF{r3d4c73d_f14g}"
+b1,abgr,msb,xy      .. file: PGP Secret Sub-key -
+b2,b,lsb,xy         .. text: "XuH}p#8Iy="
+b3,abgr,msb,xy      .. text: "t@Wp-_tH_v\r"
+b4,r,lsb,xy         .. text: "fdD\"\"\"\" "
+b4,r,msb,xy         .. text: "%Q#gpSv0c05"
+b4,g,lsb,xy         .. text: "fDfffDD\"\""
+b4,g,msb,xy         .. text: "f\"fff\"\"DD"
+b4,b,lsb,xy         .. text: "\"$BDDDDf"
+b4,b,msb,xy         .. text: "wwBDDDfUU53w"
+b4,rgb,msb,xy       .. text: "dUcv%F#A`"
+b4,bgr,msb,xy       .. text: " V\"c7Ga4"
+b4,abgr,msb,xy      .. text: "gOC_$_@o"
+{% endhighlight %}
+<h3 id="stegsolve.jar">stegsolve.jar</h3>
+<p>Shows different planes of an image by isolating parts of the RGB
+values.</p>
+<p>Installation and running:</p>
+{% highlight text %}
+$ wget http://www.caesum.com/handbook/Stegsolve.jar -O stegsolve.jar
+$ java -jar stegsolve.jar
+{% endhighlight %}
+<h1 id="exercises-1">Exercises</h1>
+<ul>
+<li><p>hideme <a href="https://play.picoctf.org/practice/challenge/350">https://play.picoctf.org/practice/challenge/350</a></p></li>
+<li><p>What Lies Within <a href="https://play.picoctf.org/practice/challenge/74">https://play.picoctf.org/practice/challenge/74</a></p></li>
+<li><p>RED <a href="https://play.picoctf.org/practice/challenge/460">https://play.picoctf.org/practice/challenge/460</a></p></li>
+</ul>
+<h1 id="storing-files">Storing files</h1>
+<h2 id="file-systems">File systems</h2>
+<p>A file system (FS) specifies how data is organized in a storage
+device.</p>
+<p>It manages:</p>
+<ul>
+<li>file names</li>
+<li>directory structure</li>
+<li>ownership</li>
+<li>permissions</li>
+<li>timestamps</li>
+<li>how data is stored in the bytes of the device</li>
+</ul>
+<p>File systems vary in how they implement these features, but we may
+see some commonalities.</p>
+<h3 id="os-interprets-the-file-system">OS interprets the file
+system</h3>
+<p>As with file formats, the file system also has an specification that
+it must follow and that the OS implements to allow the user to interact
+with it (read files, create directories, etc).</p>
+<h3 id="inodes">Inodes</h3>
+<p>Information about files and directories (e.g., ownership,
+permissions, timestamps) in the filesystem are stored in inodes (index
+nodes).</p>
+<p>A directory is a list of inodes with their assigned names. The list
+includes an entry for itself, its parent, and each of its children.</p>
+<p>Inodes are identified by an unsigned integer.</p>
+{% highlight text %}
+$ stat /etc/hosts
+  File: /etc/hosts
+  Size: 172         Blocks: 8          IO Block: 4096   regular file
+Device: 0,28    Inode: 89317123    Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2026-03-14 20:12:40.159218388 +0000
+Modify: 2026-03-14 20:12:40.441171757 +0000
+Change: 2026-03-14 20:12:40.441171757 +0000
+ Birth: 2026-03-14 20:12:40.159218388 +0000
+{% endhighlight %}
+<h3 id="ownership">Ownership</h3>
+<p>Indicates the user and group that control a file and can change
+permissions.</p>
+{% highlight text %}
+$ ls -l /etc/hosts
+-rw-r--r-- 1 root root 172 Mar 14 20:33 /etc/hosts
+{% endhighlight %}
+<h3 id="permissions">Permissions</h3>
+<p>Controls what operations can be done by which users on
+files/directories.</p>
+<ol>
+<li><p>Permitted to who?</p>
+<p>In Unix-like systems, there are three common permission sets.</p>
+<ul>
+<li><code>user</code>: owner of the file</li>
+<li><code>group</code>: users in the file's group</li>
+<li><code>others</code>: user that don't fit <code>owner</code> or
+<code>group</code></li>
+</ul></li>
+<li><p>Permitted what?</p>
+<p>The most common permissions are:</p>
+<ul>
+<li>r(ead): Read file</li>
+<li>w(rite): Write to file</li>
+<li>x(ecute): Execute file as a program</li>
+</ul>
+<p>These permissions have different semantics for directories.</p>
+<p>File systems (and operating systems) may allow setting more elaborate
+permissions.</p></li>
+<li><p><strong>Note</strong>: Permissions depend on the OS</p>
+<p>It's up to the operating system to honour the file permission.</p>
+<p>If I take your drive and put it in my computer, it won't matter that
+the files are owned by your user in your computer. I'm the master of my
+OS and can tell it to open them nonetheless.</p></li>
+</ol>
+<h3 id="timestamps">Timestamps</h3>
+<p>Timestamps that carry information about file usage.</p>
+<ul>
+<li>atime: Time the file was last read</li>
+<li>mtime: Time the file's content was last modified</li>
+<li>ctime: Time the file's metadata (e.g., ownership, permissions) was
+last modified</li>
+</ul>
+{% highlight text %}
+$ stat /etc/hosts
+  File: /etc/hosts
+  Size: 172         Blocks: 8          IO Block: 4096   regular file
+Device: 0,28    Inode: 89317846    Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2026-03-14 20:33:43.665962143 +0000
+Modify: 2026-03-14 20:33:44.129940226 +0000
+Change: 2026-03-14 20:33:44.129940226 +0000
+ Birth: 2026-03-14 20:33:43.665962143 +0000
+{% endhighlight %}
+<h3 id="file-deletions">File deletions</h3>
+<p>When you delete a file, your OS modifies the FS to make it so that
+the file is no longer marked as present (and the metadata in the inode
+<strong>may</strong> be removed) and the space it occupied is free for
+reuse.</p>
+<p>This most commonly means that while the space that the file occupied
+is now free for use by other files, the file contents are still there in
+the bytes of the device.</p>
+<p>This is the basis for file recovery applications and why it's unsafe
+to simply <code>rm</code> files from a computer.</p>
+<h2 id="partition-tables">Partition tables</h2>
+<p>Disk devices can be (and usually are) divided into
+<em>partitions</em> that can each hold a FS.</p>
+<p>Most Linux installations create three partitions in the main disk,
+boot (boot specific files), root (most files), and swap (swap space for
+RAM); but partitions schemas can vary to the user's desire (though boot
+is needed).</p>
+<h2 id="sectors-and-blocks">Sectors and blocks</h2>
+<p>Too hard :(</p>
+<h2 id="image-files">Image files</h2>
+<p>File containing a bit-for-bit copy of a storage device.</p>
+<p>Includes partition tables, filesystems, and whatever data is stored
+in them.</p>
+<p>We will work with <code>.img</code> files.</p>
+<h1 id="tools-1">Tools</h1>
+<h2 id="fdisk"><code>fdisk</code></h2>
+<p>Show/manipulate disk partition tables</p>
+<p>List partitions</p>
+<p><code>fdisk -l DEVICE</code></p>
+{% highlight text %}
+$ fdisk -l 'disk.flag.img'
+disk.flag.img: 1 GiB, 1073741824 bytes, 2097152 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0x6062d30a
+
+Device                    Boot   Start     End Sectors  Size Id Type
+Dear Diary/disk.flag.img1 *       2048  616447  614400  300M 83 Linux
+Dear Diary/disk.flag.img2       616448 1140735  524288  256M 82 Linux swap / Solaris
+Dear Diary/disk.flag.img3      1140736 2097151  956416  467M 83 Linux
+{% endhighlight %}
+<h2 id="stat"><code>stat</code></h2>
+<p>Display file or file system status</p>
+<p><code>stat FILE</code></p>
+{% highlight text %}
+$ stat /etc/hosts
+  File: /etc/hosts
+  Size: 172         Blocks: 8          IO Block: 4096   regular file
+Device: 0,28    Inode: 89317123    Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2026-03-14 20:12:40.159218388 +0000
+Modify: 2026-03-14 20:12:40.441171757 +0000
+Change: 2026-03-14 20:12:40.441171757 +0000
+ Birth: 2026-03-14 20:12:40.159218388 +0000
+{% endhighlight %}
+<h2 id="losetup"><code>losetup</code></h2>
+<p>Set up loop devices to mount file systems from image files</p>
+<p>Create a loop device to allow mounting file systems from a file.</p>
+<p><code>losetup --show -f -P FILE</code></p>
+{% highlight text %}
+$ sudo losetup --show -f -P disk.flag.img
+/dev/loop0
+
+$ ls -l /dev/loop0*
+brw-rw---- 1 root disk   7, 0 Oct 18 13:49 /dev/loop0
+brw-rw---- 1 root disk 259, 3 Oct 18 13:49 /dev/loop0p1
+brw-rw---- 1 root disk 259, 4 Oct 18 13:49 /dev/loop0p2
+brw-rw---- 1 root disk 259, 5 Oct 18 13:49 /dev/loop0p3
+{% endhighlight %}
+<p>Remove all loop device created by the previous command.</p>
+<p><code>losetup -D</code></p>
+{% highlight text %}
+$ sudo losetup -f -P disk.flag.img
+
+$ ls -l /dev/loop0*
+brw-rw---- 7,0 root 18 Oct 13:50 /dev/loop0
+{% endhighlight %}
+<h2 id="mount"><code>mount</code></h2>
+<p>Mount a file system</p>
+<p><code>mount SRC-DEVICE MOUNT-POINT</code></p>
+{% highlight text %}
+$ sudo mount /dev/loop0p1 /media/m1
+
+$ ls /media/m1
+boot         extlinux.conf   ldlinux.c32  libcom32.c32  lost+found  menu.c32         vesamenu.c32
+config-virt  initramfs-virt  ldlinux.sys  libutil.c32   mboot.c32   System.map-virt  vmlinuz-virt
+{% endhighlight %}
+<h2 id="umount"><code>umount</code></h2>
+<p>Umount a file system</p>
+<p><code>umount MOUNT-POINT</code></p>
+{% highlight text %}
+$ sudo umount /media/m1
+{% endhighlight %}
+<h2 id="sleuthkit">Sleuthkit</h2>
+<p>The Sleuth Kit is an open source forensic toolkit for analyzing
+Microsoft and UNIX file systems and disks.</p>
+<p><a href="https://github.com/sleuthkit/sleuthkit">GitHub</a></p>
+<h3 id="mmls"><code>mmls</code></h3>
+<p>Display partition layout of a volume system</p>
+<p><code>mmls IMG</code></p>
+<h3 id="fls"><code>fls</code></h3>
+<p>List file and directory names in a disk image</p>
+<p><code>fls IMAGE [INODE]</code></p>
+<p>Recursively display directories</p>
+<p><code>fls -r [INODE]</code></p>
+<p>Display files in time machine format for mactime use</p>
+<p><code>fls -m PREFIX</code></p>
+<p>Specify the sector offset where the file system starts in the
+image</p>
+<p><code>fls -o SECTOR_OFFSET</code></p>
+<h3 id="icat"><code>icat</code></h3>
+<p>Output the contents of a file based on its inode number</p>
+<p><code>icat IMG INODE</code></p>
+<h3 id="tsk_recover"><code>tsk_recover</code></h3>
+<p>Export files from an image into a local directory</p>
+<p><code>tsk_recover IMG DIR</code></p>
+<p>Recover allocated files (not deleted)</p>
+<p><code>tsk_recover -a</code></p>
+<p>Recover all fies (allocated and unallocated)</p>
+<p><code>tsk_recover -e</code></p>
+<p>Sector offset for a volume to recover</p>
+<p><code>tsk_recover -o OFFSET</code></p>
+<p>Recover files from directory inode</p>
+<p><code>tsk_recover -d DIR_INODE</code></p>
+<h3 id="mactime"><code>mactime</code></h3>
+<p>Create an ASCII time line of file activity</p>
+<p><code>mactime -b BODYFILE</code></p>
+<h1 id="exercises-2">Exercises</h1>
+<ul>
+<li><p>Sleuthkit Apprentice <a href="https://play.picoctf.org/practice/challenge/300">https://play.picoctf.org/practice/challenge/300</a></p></li>
+<li><p>Disk, disk, sleuth! <a href="https://play.picoctf.org/practice/challenge/113">https://play.picoctf.org/practice/challenge/113</a></p></li>
+<li><p>Disk, disk, sleuth! II <a href="https://play.picoctf.org/practice/challenge/137">https://play.picoctf.org/practice/challenge/137</a></p></li>
+<li><p>DISKO 1 <a href="https://play.picoctf.org/practice/challenge/505">https://play.picoctf.org/practice/challenge/505</a></p></li>
+<li><p>DISKO 2 <a href="https://play.picoctf.org/practice/challenge/506">https://play.picoctf.org/practice/challenge/506</a></p></li>
+<li><p>DISKO 3 <a href="https://play.picoctf.org/practice/challenge/507">https://play.picoctf.org/practice/challenge/507</a></p></li>
+<li><p>Operation Orchid <a href="https://play.picoctf.org/practice/challenge/285">https://play.picoctf.org/practice/challenge/285</a></p></li>
+</ul>
+<h1 id="exercises-extra">Exercises (Extra)</h1>
+<ul>
+<li><p>Redaction gone wrong <a href="https://play.picoctf.org/practice/challenge/290">https://play.picoctf.org/practice/challenge/290</a></p></li>
+<li><p>advanced-potion-making <a href="https://play.picoctf.org/practice/challenge/205">https://play.picoctf.org/practice/challenge/205</a></p></li>
+<li><p>Pitter, Patter, Platters <a href="https://play.picoctf.org/practice/challenge/87?category=4&amp;page=5">https://play.picoctf.org/practice/challenge/87?category=4&amp;page=5</a></p></li>
+<li><p>WhitePages <a href="https://play.picoctf.org/practice/challenge/51">https://play.picoctf.org/practice/challenge/51</a></p></li>
+<li><p>MSB <a href="https://play.picoctf.org/practice/challenge/359">https://play.picoctf.org/practice/challenge/359</a></p></li>
+</ul>
+<h1 id="further-learning">Further learning</h1>
+<ul>
+<li><p><a href="https://pwn.college/">https://pwn.college/</a></p></li>
+<li><p><a href="https://github.com/corkami/pics/">https://github.com/corkami/pics/</a></p></li>
+<li><p><a href="https://github.com/corkami/docs/blob/master/AbusingFileFormats/README.md">https://github.com/corkami/docs/blob/master/AbusingFileFormats/README.md</a></p></li>
+<li><p><a href="https://trailofbits.github.io/ctf/forensics/index.html">https://trailofbits.github.io/ctf/forensics/index.html</a></p></li>
+</ul>
+<h1 id="hack-time">Hack time!</h1>
+<ul>
+<li><a href="https://play.picoctf.org/practice">https://play.picoctf.org/practice</a></li>
+</ul>
