@@ -74,10 +74,7 @@ html.persist-maximized .container,
     top: 0 !important;
     left: 0 !important;
     margin: 0;
-    border-top: none;
-    border-bottom: none;
-    border-left: theme.$thick-border;
-    border-right: theme.$thick-border;
+    border: none;
     background-color: rgba(theme.$color-postbg, 0.82);
   }
   .page .container .div_article {
@@ -91,10 +88,7 @@ html.persist-maximized .container,
 }
 @media screen and (max-width: 400px) {
   .page .container {
-    border-top: none;
-    border-bottom: none;
-    border-left: theme.$medium-border;
-    border-right: theme.$medium-border;
+    border: none;
   }
   .page .container .div_article #main_atcl {
     padding: 0px 5px 5px 5px ;
