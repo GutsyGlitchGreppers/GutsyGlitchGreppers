@@ -22,3 +22,17 @@ The subjects covered are:
 Sessions that will be done in the future at the leisure of the authors:
 - Cryptography
 - Web client-side attacks
+
+Sessions that will not be done:
+- x86 reversing
+- binary exploitation
+
+Those subjects are much too advanced and require more teaching that what can be
+accomplished in a bootcamp. Those interested are advised to go through the
+[pwn.college](pwn.college) content and check out the Ropper's [binary
+exploitation](https://www.hoppersroppers.org/roadmap/training/pwning.html) and
+[reverse
+engineering](https://www.hoppersroppers.org/roadmap/training/hardstuff.html)
+roadmaps.
+
+Check out [the learning roadmap](/posts/2026/03/21/roadmap) too.
