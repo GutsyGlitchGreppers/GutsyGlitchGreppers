@@ -6,7 +6,15 @@ date: 2026-04-05
 comment: true
 ---
 
-The following are post version of the slides used for the GGG's Introduction to CTF course.
+The following are post version of the slides used for the GGG's Introduction to
+CTF course.
+
+The purpose of the course is to be a fast, violent introduction to solving CTF
+problems mainly focused on the topics covered by PicoCTF. You are given the
+knowledge necessary to solve practical problems and are expected to go through a
+list of topical exercises. Basic computer literacy (as explained in the
+[learning roadmap](/posts/2026/03/21/roadmap)) and some coding experience is
+assumed.
 
 The subjects covered are:
 
@@ -28,8 +36,8 @@ Sessions that will not be done:
 - binary exploitation
 
 Those subjects are much too advanced and require more teaching that what can be
-accomplished in a bootcamp. Those interested are advised to go through the
-[pwn.college](pwn.college) content and check out the Ropper's [binary
+accomplished in a general bootcamp. Those interested are advised to go through
+the [pwn.college](pwn.college) content and check out the Ropper's [binary
 exploitation](https://www.hoppersroppers.org/roadmap/training/pwning.html) and
 [reverse
 engineering](https://www.hoppersroppers.org/roadmap/training/hardstuff.html)
